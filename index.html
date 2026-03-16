@@ -990,7 +990,7 @@ function renderTable(list) {
   document.getElementById('tbody').innerHTML = list.map((v, i) => {
     const done     = String(v.status).toLowerCase() === 'updated';
     const fuelTrans = [v.fuelType, v.transmission].filter(Boolean).join(' / ') || '—';
-    const locked1h = done && isEditLocked(v.rowIndex, v.timestamp);
+    const locked1h = done && isEditLocked(v);
     const hasTvsc  = v.tvscPrice && Number(v.tvscPrice) > 0;
     const hasExp   = v.expectedPrice && Number(v.expectedPrice) > 0;
     return `<tr style="cursor:pointer" onclick="openSheet(${v.rowIndex})">
@@ -1059,7 +1059,7 @@ function renderCards(list) {
         </div>
         ${(() => {
           if (!done) return `<div class="card-tap-hint" id="hint-${v.rowIndex}">👆 Tap to enter prices</div>`;
-          const secs  = secsRemaining(v.rowIndex, v.timestamp);
+          const secs  = secsRemaining(v);
           if (secs <= 0) return `<div class="card-tap-hint locked" id="hint-${v.rowIndex}">🔒 Locked</div>`;
           const pct   = secs / (EDIT_WINDOW_MS / 1000);
           const color = pct > 0.5 ? 'green' : pct > 0.2 ? 'amber' : 'red';
@@ -1073,45 +1073,31 @@ function renderCards(list) {
 // ── TIMESTAMP HELPERS ────────────────────────────────────────
 const EDIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
 
-// ── TIMESTAMP HELPERS ─────────────────────────────────────────
-// Parses "16/03/2026 15:14:32" or "16-03-2026 15:14" → Date (local time)
-function parseTimestamp(ts) {
-  if (!ts) return null;
-  const p = ts.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
-  if (!p) return null;
-  return new Date(
-    parseInt(p[3]),          // year
-    parseInt(p[2]) - 1,      // month (0-indexed)
-    parseInt(p[1]),          // day
-    parseInt(p[4]),          // hours
-    parseInt(p[5]),          // minutes
-    parseInt(p[6] || '0')    // seconds (optional)
-  );
+// ── LOCK HELPERS ──────────────────────────────────────────────
+// savedAtMs comes directly from the server as epoch milliseconds.
+// No date parsing, no timezone issues, works after every re-login.
+function msElapsed(rowIndex, ts, savedAtMs) {
+  if (savedAtMs && savedAtMs > 0) return Math.max(0, Date.now() - savedAtMs);
+  // fallback: parse the formatted string (covers old records)
+  const p = ts && ts.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!p) return 0;
+  const d = new Date(parseInt(p[3]), parseInt(p[2])-1, parseInt(p[1]),
+                     parseInt(p[4]), parseInt(p[5]), parseInt(p[6]||'0'));
+  return isNaN(d.getTime()) ? 0 : Math.max(0, Date.now() - d.getTime());
 }
-
-// Always use the server-recorded timestamp — works after re-login on any device
-function msElapsed(rowIndex, ts) {
-  const d = parseTimestamp(ts);
-  if (!d || isNaN(d.getTime())) return 0;
-  return Math.max(0, Date.now() - d.getTime());
+function isEditLocked(v) {
+  if (!v || String(v.status).toLowerCase() !== 'updated') return false;
+  return msElapsed(v.rowIndex, v.timestamp, v.savedAtMs) > EDIT_WINDOW_MS;
 }
-
-function isEditLocked(rowIndex, ts) {
-  if (!ts) return false;                        // never saved → always editable
-  return msElapsed(rowIndex, ts) > EDIT_WINDOW_MS;
+function secsRemaining(v) {
+  return Math.max(0, Math.round((EDIT_WINDOW_MS - msElapsed(v.rowIndex, v.timestamp, v.savedAtMs)) / 1000));
 }
-
-function secsRemaining(rowIndex, ts) {
-  return Math.max(0, Math.round((EDIT_WINDOW_MS - msElapsed(rowIndex, ts)) / 1000));
-}
-
 function fmtCountdown(secs) {
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return m + ':' + String(s).padStart(2, '0');
 }
-
-// recordSaveTime kept for compatibility but no longer used for lock logic
+// No-op kept for compatibility
 function recordSaveTime(rowIndex) {}
 
 
@@ -1130,7 +1116,7 @@ function tickHints() {
     if (String(v.status).toLowerCase() !== 'updated' || !v.timestamp) return;
     const el = document.getElementById('hint-' + v.rowIndex);
     if (!el) return;
-    const secs = secsRemaining(v.rowIndex, v.timestamp);
+    const secs = secsRemaining(v);
     if (secs <= 0) {
       el.className = 'card-tap-hint locked';
       el.innerHTML = '🔒 Locked';
@@ -1193,7 +1179,7 @@ function validatePrices(tv, ex, prefix) {
 function enableEdit(ri, mode) {
   // 1-hour lock check
   const v = vehicles.find(x => x.rowIndex === ri);
-  if (v && isEditLocked(v.rowIndex, v.timestamp)) {
+  if (v && isEditLocked(v)) {
     const elapsed = msElapsed(v.rowIndex, v.timestamp);
     const diffMin = Math.floor(elapsed / 60000);
     const diffSec = Math.round((elapsed % 60000) / 1000);
@@ -1315,8 +1301,8 @@ function applySaveUI(ri, res, mode) {
     if (card) card.className = 'm-card is-updated';
   }
   const v = vehicles.find(x => x.rowIndex === ri);
-  if (v) { v.status='Updated'; v.timestamp=res.timestamp; v.startPrice=res.startPrice; }
-  recordSaveTime(ri); // browser-side save time
+  if (v) { v.status='Updated'; v.timestamp=res.timestamp; v.startPrice=res.startPrice; v.savedAtMs=res.savedAtMs; }
+  recordSaveTime(ri);
   renderStats();
 }
 
@@ -1349,7 +1335,7 @@ function openSheet(ri) {
   // ── 2-minute edit lock ────────────────────────────────────
   let editLocked = false;
   let lockMsg = '';
-  if (done && isEditLocked(v.rowIndex, v.timestamp)) {
+  if (done && isEditLocked(v)) {
     editLocked = true;
     const elapsed = msElapsed(v.rowIndex, v.timestamp);
     const diffMin = Math.floor(elapsed / 60000);
@@ -1445,10 +1431,10 @@ async function sheetSave() {
     }
     // update local state
     const v = vehicles.find(x => x.rowIndex === ri);
-    recordSaveTime(ri); // record browser-side save time for lock check
+    recordSaveTime(ri);
     if (v) {
       v.status = 'Updated'; v.timestamp = res.timestamp;
-      v.startPrice = res.startPrice;
+      v.startPrice = res.startPrice; v.savedAtMs = res.savedAtMs;
       v.tvscPrice = tv; v.expectedPrice = ex;
     }
     // update card in DOM
