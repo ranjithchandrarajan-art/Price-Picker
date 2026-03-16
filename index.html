@@ -1059,13 +1059,13 @@ function renderCards(list) {
         </div>
         ${(() => {
           if (!done) return `<div class="card-tap-hint" id="hint-${v.rowIndex}">👆 Tap to enter prices</div>`;
-          const elapsed = msElapsedForReg(v.registrationNumber);
-          if (elapsed === null) return `<div class="card-tap-hint done" id="hint-${v.rowIndex}">✓ Tap to edit prices</div>`;
-          if (elapsed > EDIT_WINDOW_MS) return `<div class="card-tap-hint locked" id="hint-${v.rowIndex}">🔒 Locked</div>`;
-          const secs  = Math.round((EDIT_WINDOW_MS - elapsed) / 1000);
-          const pct   = elapsed / EDIT_WINDOW_MS;
-          const color = pct < 0.5 ? 'green' : pct < 0.8 ? 'amber' : 'red';
-          return `<div class="card-tap-hint done edit-${color}" id="hint-${v.rowIndex}">✏ Edit <span class="hint-timer">${fmtCountdown(secs)}</span></div>`;
+          const e = elapsedMs(v);
+          if (e === null) return `<div class="card-tap-hint done" id="hint-${v.rowIndex}">✓ Tap to edit prices</div>`;
+          if (e > EDIT_WINDOW_MS) return `<div class="card-tap-hint locked" id="hint-${v.rowIndex}">🔒 Locked</div>`;
+          const secs = Math.round((EDIT_WINDOW_MS - e) / 1000);
+          const pct  = e / EDIT_WINDOW_MS;
+          const col  = pct < 0.5 ? 'green' : pct < 0.8 ? 'amber' : 'red';
+          return `<div class="card-tap-hint done edit-${col}" id="hint-${v.rowIndex}">✏ Edit <span class="hint-timer">${fmtCountdown(secs)}</span></div>`;
         })()}
       </div>
     </div>`;
@@ -1075,60 +1075,58 @@ function renderCards(list) {
 // ── TIMESTAMP HELPERS ────────────────────────────────────────
 const EDIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
 
-// ── LOCK HELPERS — localStorage keyed by reg number ──────────
-// This is the ONLY reliable approach:
-// • Works after re-login (localStorage persists)
-// • Works on same device after page refresh
-// • Zero timestamp parsing — just Date.now() arithmetic
-// NOTE: Only records saved IN THIS BROWSER are lockable.
-//       Records saved on another device will always show editable
-//       (that device has its own localStorage entry).
-const LS_LOCK_KEY = 'aeval_locks';
+// ── LOCK HELPERS ──────────────────────────────────────────────
+// Rule: status=Updated + timestamp exists + elapsed > 2min → LOCKED
+// Pure server timestamp comparison. Works on every device, every re-login.
 
-function getLocks() {
-  try { return JSON.parse(localStorage.getItem(LS_LOCK_KEY) || '{}'); }
-  catch(_) { return {}; }
+function parseTs(ts) {
+  if (!ts || !String(ts).trim()) return null;
+  // Format: "16/03/2026 15:14:32"
+  const p = String(ts).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (!p) return null;
+  return new Date(
+    parseInt(p[3], 10),
+    parseInt(p[2], 10) - 1,
+    parseInt(p[1], 10),
+    parseInt(p[4], 10),
+    parseInt(p[5], 10),
+    parseInt(p[6] || '0', 10)
+  );
 }
 
-function recordSaveTime(v) {
-  const locks = getLocks();
-  locks[v.registrationNumber] = Date.now();
-  localStorage.setItem(LS_LOCK_KEY, JSON.stringify(locks));
-}
-
-function msElapsedForReg(regNum) {
-  const locks = getLocks();
-  const t = locks[regNum];
-  if (!t) return null;
-  return Math.max(0, Date.now() - t);
+function elapsedMs(v) {
+  if (!v || !v.timestamp) return null;
+  const d = parseTs(v.timestamp);
+  if (!d || isNaN(d.getTime())) return null;
+  return Math.max(0, Date.now() - d.getTime());
 }
 
 function isEditLocked(v) {
   if (!v || String(v.status).toLowerCase() !== 'updated') return false;
-  const elapsed = msElapsedForReg(v.registrationNumber);
-  if (elapsed === null) return false; // saved on another device → allow edit
-  return elapsed > EDIT_WINDOW_MS;
+  const e = elapsedMs(v);
+  if (e === null) return false;   // no timestamp → editable
+  return e > EDIT_WINDOW_MS;
 }
 
-function secsRemaining(v) {
-  const elapsed = msElapsedForReg(v.registrationNumber);
-  if (elapsed === null) return EDIT_WINDOW_MS / 1000; // no record = treat as just saved
-  return Math.max(0, Math.round((EDIT_WINDOW_MS - elapsed) / 1000));
-}
-
-function fmtElapsed(v) {
-  const elapsed = msElapsedForReg(v.registrationNumber);
-  if (elapsed === null) return '';
-  const m = Math.floor(elapsed / 60000);
-  const s = Math.round((elapsed % 60000) / 1000);
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+function secsLeft(v) {
+  const e = elapsedMs(v);
+  if (e === null) return EDIT_WINDOW_MS / 1000;
+  return Math.max(0, Math.round((EDIT_WINDOW_MS - e) / 1000));
 }
 
 function fmtCountdown(secs) {
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return m + ':' + String(s).padStart(2, '0');
+  return Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
 }
+
+function fmtElapsed(v) {
+  const e = elapsedMs(v);
+  if (e === null) return '';
+  const m = Math.floor(e / 60000), s = Math.round((e % 60000) / 1000);
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function recordSaveTime() {} // no-op
+
 
 
 // ── CARD HINT TICKER ─────────────────────────────────────────
@@ -1146,16 +1144,16 @@ function tickHints() {
     if (String(v.status).toLowerCase() !== 'updated') return;
     const el = document.getElementById('hint-' + v.rowIndex);
     if (!el) return;
-    const elapsed = msElapsedForReg(v.registrationNumber);
-    if (elapsed === null) return; // not saved in this browser — leave hint as-is
-    if (elapsed > EDIT_WINDOW_MS) {
+    const e = elapsedMs(v);
+    if (e === null) return;
+    if (e > EDIT_WINDOW_MS) {
       el.className = 'card-tap-hint locked';
       el.innerHTML = '🔒 Locked';
     } else {
-      const secs  = Math.round((EDIT_WINDOW_MS - elapsed) / 1000);
-      const pct   = elapsed / EDIT_WINDOW_MS;
-      const color = pct < 0.5 ? 'green' : pct < 0.8 ? 'amber' : 'red';
-      el.className = 'card-tap-hint done edit-' + color;
+      const secs = Math.round((EDIT_WINDOW_MS - e) / 1000);
+      const pct  = e / EDIT_WINDOW_MS;
+      const col  = pct < 0.5 ? 'green' : pct < 0.8 ? 'amber' : 'red';
+      el.className = 'card-tap-hint done edit-' + col;
       el.innerHTML = `✏ Edit <span class="hint-timer">${fmtCountdown(secs)}</span>`;
     }
   });
