@@ -320,12 +320,15 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 }
 .pi:focus{outline:none;border-color:var(--navy);background:var(--white);box-shadow:0 0 0 3px rgba(30,45,120,.08)}
 .pi.filled{border-color:#bbf7d0;background:#f0fdf4}
+.pi.editing{border-color:var(--navy) !important;background:var(--white) !important}
+.pi.input-err{border-color:var(--red) !important;background:#fef2f2 !important;animation:shake .3s ease;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 .price-cell{display:flex;align-items:center;gap:5px}
 .rupee{color:var(--muted);font-size:12px}
 .start-val{font-weight:700;color:var(--green);font-size:13px}
 .start-val.empty{color:var(--muted);font-weight:400}
 
-/* ── SAVE BUTTON ────────────────────────────────────────────── */
+/* ── SAVE / EDIT BUTTONS ────────────────────────────────────── */
 .btn-save{
   padding:5px 11px;background:var(--navy);color:var(--white);
   font-weight:600;font-size:11.5px;border-radius:7px;
@@ -334,6 +337,22 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .btn-save:hover:not(:disabled){background:var(--navy-dark)}
 .btn-save:disabled{opacity:.4;cursor:not-allowed}
 .btn-save.done{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.btn-edit{
+  padding:5px 11px;background:transparent;color:var(--navy);
+  font-weight:600;font-size:11.5px;border-radius:7px;
+  border:1.5px solid var(--navy);white-space:nowrap;transition:.2s;
+}
+.btn-edit:hover{background:var(--navy);color:var(--white)}
+
+/* ── MOBILE INDEX CIRCLE ────────────────────────────────────── */
+.idx-circle{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;margin-top:6px;
+  flex-shrink:0;
+}
+.idx-circle.updated{background:#dcfce7;color:#15803d;border:1.5px solid #bbf7d0}
+.idx-circle.pending{background:#fff7ed;color:var(--orange);border:1.5px solid #fed7aa}
 
 /* ════════════════════════════════════════════════════════════
    MOBILE CARDS
@@ -753,6 +772,7 @@ function renderTable(list) {
   document.getElementById('tbody').innerHTML = list.map((v, i) => {
     const done   = String(v.status).toLowerCase() === 'updated';
     const fuelTrans = [v.fuelType, v.transmission].filter(Boolean).join(' / ') || '—';
+    const locked = done ? 'disabled' : '';
     return `<tr>
       <td class="td-num">${i+1}</td>
       <td class="td-fixed"><span class="reg">${v.registrationNumber}</span></td>
@@ -769,14 +789,14 @@ function renderTable(list) {
         <div class="price-cell">
           <span class="rupee">₹</span>
           <input class="pi ${done?'filled':''}" type="number" id="tv-${v.rowIndex}"
-                 value="${v.tvscPrice||''}" placeholder="0" min="0"/>
+                 value="${v.tvscPrice||''}" placeholder="0" min="0" ${locked}/>
         </div>
       </td>
       <td class="td-fixed">
         <div class="price-cell">
           <span class="rupee">₹</span>
           <input class="pi ${done?'filled':''}" type="number" id="ex-${v.rowIndex}"
-                 value="${v.expectedPrice||''}" placeholder="0" min="0"
+                 value="${v.expectedPrice||''}" placeholder="0" min="0" ${locked}
                  oninput="previewStart(${v.rowIndex})"/>
         </div>
       </td>
@@ -786,8 +806,10 @@ function renderTable(list) {
         </span>
       </td>
       <td class="td-fixed">
-        <button class="btn-save ${done?'done':''}" id="sb-${v.rowIndex}"
-                onclick="save(${v.rowIndex})">${done?'✓':'Save'}</button>
+        ${done
+          ? `<button class="btn-edit" id="sb-${v.rowIndex}" onclick="enableEdit(${v.rowIndex},'desktop')">✏ Edit</button>`
+          : `<button class="btn-save" id="sb-${v.rowIndex}" onclick="save(${v.rowIndex})">Save</button>`
+        }
       </td>
     </tr>`;
   }).join('');
@@ -802,9 +824,9 @@ function renderCards(list) {
       '<div class="empty"><div class="empty-ico">🚗</div><p>No vehicles found</p></div>';
     return;
   }
-  document.getElementById('m-cards').innerHTML = list.map(v => {
+  document.getElementById('m-cards').innerHTML = list.map((v, i) => {
     const done   = String(v.status).toLowerCase() === 'updated';
-    const spShow = v.startPrice || calcStart(v.expectedPrice);
+    const locked = done ? 'disabled' : '';
     return `
     <div class="m-card ${done?'is-updated':'is-pending'}">
       <div class="m-card-body">
@@ -814,9 +836,12 @@ function renderCards(list) {
             <div class="m-card-model">${v.makeModel}</div>
             <div class="m-card-meta">${v.yearOfMfg||''} · ${v.fuelType||''} · ${v.colorId||''}</div>
           </div>
-          <span class="status ${done?'updated':'pending'}" id="mc-st-${v.rowIndex}">
-            ${v.status||'Pending'}
-          </span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <span class="status ${done?'updated':'pending'}" id="mc-st-${v.rowIndex}">
+              ${v.status||'Pending'}
+            </span>
+            <div class="idx-circle ${done?'updated':'pending'}">${i+1}</div>
+          </div>
         </div>
         <div class="m-grid">
           <div class="m-field"><label>Customer</label><span style="color:var(--blue-stat);font-weight:600">${v.customerName||'—'}</span></div>
@@ -828,22 +853,23 @@ function renderCards(list) {
           <div class="m-field">
             <label>TVSC Price ₹</label>
             <input class="pi ${done?'filled':''}" type="number" id="mc-tv-${v.rowIndex}"
-                   value="${v.tvscPrice||''}" placeholder="Market price" min="0"/>
+                   value="${v.tvscPrice||''}" placeholder="Market price" min="0" ${locked}/>
           </div>
           <div class="m-field">
             <label>Expected Price ₹</label>
             <input class="pi ${done?'filled':''}" type="number" id="mc-ex-${v.rowIndex}"
-                   value="${v.expectedPrice||''}" placeholder="Reserved price" min="0"
+                   value="${v.expectedPrice||''}" placeholder="Reserved price" min="0" ${locked}
                    oninput="previewStartM(${v.rowIndex})"/>
           </div>
         </div>
         <div class="m-footer">
-          <div class="m-start" id="mc-sp-${v.rowIndex}" style="visibility:hidden">—</div>
-          <button class="btn-save ${done?'done':''}" id="mc-sb-${v.rowIndex}"
-                  onclick="saveM(${v.rowIndex})">${done?'✓ Saved':'Save'}</button>
-        </div>
-        <div class="m-ts" id="mc-ts-${v.rowIndex}">
-          ${v.timestamp ? 'Updated: ' + v.timestamp : ''}
+          <div class="m-ts" id="mc-ts-${v.rowIndex}" style="font-size:11px;color:var(--muted)">
+            ${v.timestamp ? 'Saved: '+v.timestamp : ''}
+          </div>
+          ${done
+            ? `<button class="btn-edit" id="mc-sb-${v.rowIndex}" onclick="enableEdit(${v.rowIndex},'mobile')">✏ Edit</button>`
+            : `<button class="btn-save" id="mc-sb-${v.rowIndex}" onclick="saveM(${v.rowIndex})">Save</button>`
+          }
         </div>
       </div>
     </div>`;
@@ -870,12 +896,67 @@ function previewStartM(ri) {
 }
 
 // ══════════════════════════════════════════════════════════════
+// VALIDATION HELPER
+// ══════════════════════════════════════════════════════════════
+function validatePrices(tv, ex, prefix) {
+  if (!tv || tv === '') { toast('TVSC Price is required before saving.', 'err'); return false; }
+  if (!ex || ex === '') { toast('Expected Price is required before saving.', 'err'); return false; }
+  if (Number(tv) > Number(ex)) {
+    toast('TVSC Price must be ≤ Expected Price.', 'err');
+    // flash the TVSC input red
+    const el = document.getElementById(prefix + 'tv-' + (prefix ? '' : ''));
+    return false;
+  }
+  return true;
+}
+
+// ══════════════════════════════════════════════════════════════
+// EDIT MODE TOGGLE
+// ══════════════════════════════════════════════════════════════
+function enableEdit(ri, mode) {
+  if (mode === 'desktop') {
+    ['tv-','ex-'].forEach(p => {
+      const el = document.getElementById(p+ri);
+      if (el) { el.disabled = false; el.classList.remove('filled'); el.classList.add('editing'); }
+    });
+    const btn = document.getElementById('sb-'+ri);
+    if (btn) {
+      btn.className = 'btn-save';
+      btn.textContent = 'Save';
+      btn.onclick = () => save(ri);
+    }
+  } else {
+    ['mc-tv-','mc-ex-'].forEach(p => {
+      const el = document.getElementById(p+ri);
+      if (el) { el.disabled = false; el.classList.remove('filled'); el.classList.add('editing'); }
+    });
+    const btn = document.getElementById('mc-sb-'+ri);
+    if (btn) {
+      btn.className = 'btn-save';
+      btn.textContent = 'Save';
+      btn.onclick = () => saveM(ri);
+    }
+  }
+  toast('Prices unlocked for editing.', 'ok');
+}
+
+// ══════════════════════════════════════════════════════════════
 // SAVE — DESKTOP
 // ══════════════════════════════════════════════════════════════
 async function save(ri) {
-  const tv = document.getElementById('tv-'+ri)?.value;
-  const ex = document.getElementById('ex-'+ri)?.value;
-  if (!tv || !ex) { toast('Enter both TVSC and Expected prices.', 'err'); return; }
+  const tvEl = document.getElementById('tv-'+ri);
+  const exEl = document.getElementById('ex-'+ri);
+  const tv = tvEl?.value?.trim();
+  const ex = exEl?.value?.trim();
+
+  if (!tv) { toast('TVSC Price is required before saving.', 'err'); tvEl?.focus(); return; }
+  if (!ex) { toast('Expected Price is required before saving.', 'err'); exEl?.focus(); return; }
+  if (Number(tv) > Number(ex)) {
+    toast('TVSC Price must be ≤ Expected Price.', 'err');
+    tvEl?.classList.add('input-err'); setTimeout(() => tvEl?.classList.remove('input-err'), 1800);
+    return;
+  }
+
   const btn = document.getElementById('sb-'+ri);
   btn.disabled = true; btn.textContent = '…';
   try {
@@ -893,9 +974,19 @@ async function save(ri) {
 // SAVE — MOBILE
 // ══════════════════════════════════════════════════════════════
 async function saveM(ri) {
-  const tv = document.getElementById('mc-tv-'+ri)?.value;
-  const ex = document.getElementById('mc-ex-'+ri)?.value;
-  if (!tv || !ex) { toast('Enter both TVSC and Expected prices.', 'err'); return; }
+  const tvEl = document.getElementById('mc-tv-'+ri);
+  const exEl = document.getElementById('mc-ex-'+ri);
+  const tv = tvEl?.value?.trim();
+  const ex = exEl?.value?.trim();
+
+  if (!tv) { toast('TVSC Price is required before saving.', 'err'); tvEl?.focus(); return; }
+  if (!ex) { toast('Expected Price is required before saving.', 'err'); exEl?.focus(); return; }
+  if (Number(tv) > Number(ex)) {
+    toast('TVSC Price must be ≤ Expected Price.', 'err');
+    tvEl?.classList.add('input-err'); setTimeout(() => tvEl?.classList.remove('input-err'), 1800);
+    return;
+  }
+
   const btn = document.getElementById('mc-sb-'+ri);
   btn.disabled = true; btn.textContent = '…';
   try {
@@ -911,29 +1002,37 @@ async function saveM(ri) {
 
 function applySaveUI(ri, res, mode) {
   if (mode === 'desktop') {
+    // lock inputs
+    ['tv-','ex-'].forEach(p => {
+      const el = document.getElementById(p+ri);
+      if (el) { el.disabled = true; el.classList.add('filled'); el.classList.remove('editing','input-err'); }
+    });
+    // swap Save → Edit
     const btn = document.getElementById('sb-'+ri);
-    if (btn) { btn.disabled=false; btn.textContent='✓'; btn.className='btn-save done'; }
+    if (btn) { btn.disabled=false; btn.textContent='✏ Edit'; btn.className='btn-edit'; btn.onclick=()=>enableEdit(ri,'desktop'); }
     const st = document.getElementById('st-'+ri);
     if (st) { st.textContent='Updated'; st.className='status updated'; }
-    ['tv-','ex-'].forEach(p => { const el=document.getElementById(p+ri); if(el) el.classList.add('filled'); });
   } else {
+    // lock inputs
+    ['mc-tv-','mc-ex-'].forEach(p => {
+      const el = document.getElementById(p+ri);
+      if (el) { el.disabled = true; el.classList.add('filled'); el.classList.remove('editing','input-err'); }
+    });
+    // swap Save → Edit
     const btn = document.getElementById('mc-sb-'+ri);
-    if (btn) { btn.disabled=false; btn.textContent='✓ Saved'; btn.className='btn-save done'; }
+    if (btn) { btn.disabled=false; btn.textContent='✏ Edit'; btn.className='btn-edit'; btn.onclick=()=>enableEdit(ri,'mobile'); }
     const st = document.getElementById('mc-st-'+ri);
     if (st) { st.textContent='Updated'; st.className='status updated'; }
     const ts = document.getElementById('mc-ts-'+ri);
-    if (ts) ts.textContent = 'Updated: '+res.timestamp;
-    const sp = document.getElementById('mc-sp-'+ri);
-    if (sp) sp.textContent = 'Start: ₹ '+Number(res.startPrice).toLocaleString();
-    // update card class
+    if (ts) ts.textContent = 'Saved: '+res.timestamp;
     const card = document.getElementById('mc-sb-'+ri)?.closest('.m-card');
-    if (card) { card.className = 'm-card is-updated'; }
-    ['mc-tv-','mc-ex-'].forEach(p => { const el=document.getElementById(p+ri); if(el) el.classList.add('filled'); });
+    if (card) card.className = 'm-card is-updated';
   }
   const v = vehicles.find(x => x.rowIndex === ri);
   if (v) { v.status='Updated'; v.timestamp=res.timestamp; v.startPrice=res.startPrice; }
   renderStats();
 }
+
 
 // ══════════════════════════════════════════════════════════════
 // PIVOT
