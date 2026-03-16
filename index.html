@@ -1073,54 +1073,47 @@ function renderCards(list) {
 // ── TIMESTAMP HELPERS ────────────────────────────────────────
 const EDIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
 
-// ── Persisted save-times in localStorage (survives page refresh) ──
-const LS_SAVES_KEY = 'aeval_save_times';
-function getSaveTimes() {
-  try { return JSON.parse(localStorage.getItem(LS_SAVES_KEY) || '{}'); } catch(_) { return {}; }
-}
-function recordSaveTime(rowIndex) {
-  const s = getSaveTimes();
-  s[rowIndex] = Date.now();
-  localStorage.setItem(LS_SAVES_KEY, JSON.stringify(s));
-}
-function msElapsedSinceRow(rowIndex) {
-  const s = getSaveTimes();
-  if (!s[rowIndex]) return null;
-  return Date.now() - s[rowIndex];
-}
-
+// ── TIMESTAMP HELPERS ─────────────────────────────────────────
+// Parses "16/03/2026 15:14:32" or "16-03-2026 15:14" → Date (local time)
 function parseTimestamp(ts) {
   if (!ts) return null;
-  // handles: "16/03/2026 15:14:32" or "16-03-2026 15:14"
-  const p = ts.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})\s+(\d{2}):(\d{2})/);
+  const p = ts.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
   if (!p) return null;
   return new Date(
-    parseInt(p[3]),   // year
-    parseInt(p[2])-1, // month (0-indexed)
-    parseInt(p[1]),   // day
-    parseInt(p[4]),   // hours
-    parseInt(p[5])    // minutes
+    parseInt(p[3]),          // year
+    parseInt(p[2]) - 1,      // month (0-indexed)
+    parseInt(p[1]),          // day
+    parseInt(p[4]),          // hours
+    parseInt(p[5]),          // minutes
+    parseInt(p[6] || '0')    // seconds (optional)
   );
 }
-// Use browser-recorded save time (reliable), fall back to parsed timestamp
+
+// Always use the server-recorded timestamp — works after re-login on any device
 function msElapsed(rowIndex, ts) {
-  const fromBrowser = msElapsedSinceRow(rowIndex);
-  if (fromBrowser !== null) return fromBrowser;
   const d = parseTimestamp(ts);
-  if (!d) return 0;
-  return Date.now() - d.getTime();
+  if (!d || isNaN(d.getTime())) return 0;
+  return Math.max(0, Date.now() - d.getTime());
 }
+
 function isEditLocked(rowIndex, ts) {
+  if (!ts) return false;                        // never saved → always editable
   return msElapsed(rowIndex, ts) > EDIT_WINDOW_MS;
 }
+
 function secsRemaining(rowIndex, ts) {
   return Math.max(0, Math.round((EDIT_WINDOW_MS - msElapsed(rowIndex, ts)) / 1000));
 }
+
 function fmtCountdown(secs) {
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return m + ':' + String(s).padStart(2, '0');
 }
+
+// recordSaveTime kept for compatibility but no longer used for lock logic
+function recordSaveTime(rowIndex) {}
+
 
 // ── CARD HINT TICKER ─────────────────────────────────────────
 let _hintTicker = null;
@@ -1160,7 +1153,7 @@ function calcStart(expVal, tvVal) {
   const tv  = Number(tvVal);
   if (!exp || isNaN(exp) || !tv || isNaN(tv)) return null;
   const m = exp >= 700000 ? 7000 : exp >= 500000 ? 5000 : 2000;
-  return exp - (Math.floor((exp - tv) / m) + 1) * m;
+  return exp - (Math.floor((exp - tv) / m) + 2) * m;
 }
 function previewStart(ri) {
   const sp = calcStart(
