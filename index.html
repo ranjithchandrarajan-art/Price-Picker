@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>TVS Certified — Auction Price Evaluator</title>
+<title>TVS Certified — Auction Vehicles Price Picker</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 /* ── RESET ───────────────────────────────────────────────────── */
@@ -55,7 +55,7 @@ input,select{font-family:var(--font)}
    LOGIN PAGE
 ════════════════════════════════════════════════════════════ */
 #login-page{
-  flex:1;display:flex;align-items:center;justify-content:center;padding:24px;
+  flex:1;display:flex;align-items:flex-start;justify-content:center;padding:48px 24px 24px;
   background: linear-gradient(135deg, var(--blue-grad1) 0%, var(--blue-grad2) 100%);
   min-height:100vh;
 }
@@ -419,7 +419,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
            alt="TVS Certified"
            onerror="this.style.display='none';document.getElementById('login-logo-fallback').style.display='flex'"/>
       <div class="login-logo-fallback" id="login-logo-fallback" style="display:none">🚗</div>
-      <h1>Auction Price Evaluator</h1>
+      <h1>Auction Vehicles Price Picker</h1>
       <p class="sub">Enter your registered mobile number to view<br/>and update your assigned vehicles.</p>
       <label class="field-label">Mobile Number</label>
       <input class="field-input" type="tel" id="mob" maxlength="10"
@@ -442,7 +442,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
              onerror="this.style.display='none';document.getElementById('hdr-logo-fallback').style.display='flex'"/>
         <div class="hdr-logo-fallback" id="hdr-logo-fallback" style="display:none">🚗</div>
         <div>
-          <div class="hdr-title">Auction Price Evaluator</div>
+          <div class="hdr-title">Auction Vehicles Price Picker</div>
           <div class="hdr-sub" id="hdr-sub">Welcome</div>
         </div>
       </div>
