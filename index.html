@@ -1076,13 +1076,29 @@ function renderCards(list) {
 const EDIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
 
 // ── LOCK HELPERS ──────────────────────────────────────────────
-// timestampMs = epoch ms sent directly from Apps Script.
-// No string parsing. Works on every device, every re-login.
-
 function elapsedMs(v) {
-  const ms = Number(v && v.timestampMs);
-  if (!ms || ms <= 0) return null; // no timestamp → treat as editable
-  return Math.max(0, Date.now() - ms);
+  if (!v) return null;
+
+  // 1. Best: epoch ms from server (after Code.gs redeploy)
+  const ms = Number(v.timestampMs);
+  if (ms > 0) return Math.max(0, Date.now() - ms);
+
+  // 2. Parse the formatted string "16/03/2026 17:08:11"
+  const ts = String(v.timestamp || '').trim();
+  if (!ts) return null;
+  const p = ts.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
+  if (!p) return null;
+  // p: [full, dd, MM, yyyy, HH, mm, ss]
+  const d = new Date(
+    parseInt(p[3], 10),
+    parseInt(p[2], 10) - 1,
+    parseInt(p[1], 10),
+    parseInt(p[4], 10),
+    parseInt(p[5], 10),
+    parseInt(p[6], 10)
+  );
+  if (isNaN(d.getTime())) return null;
+  return Math.max(0, Date.now() - d.getTime());
 }
 
 function isEditLocked(v) {
@@ -1104,12 +1120,12 @@ function fmtCountdown(secs) {
 
 function fmtElapsed(v) {
   const e = elapsedMs(v);
-  if (e === null) return '';
+  if (!e) return '';
   const m = Math.floor(e / 60000), s = Math.round((e % 60000) / 1000);
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
-function recordSaveTime() {} // no-op
+function recordSaveTime() {}
 
 
 
