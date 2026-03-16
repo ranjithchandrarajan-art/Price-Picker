@@ -1076,35 +1076,19 @@ function renderCards(list) {
 const EDIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
 
 // ── LOCK HELPERS ──────────────────────────────────────────────
-// Rule: status=Updated + timestamp exists + elapsed > 2min → LOCKED
-// Pure server timestamp comparison. Works on every device, every re-login.
-
-function parseTs(ts) {
-  if (!ts || !String(ts).trim()) return null;
-  // Format: "16/03/2026 15:14:32"
-  const p = String(ts).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-  if (!p) return null;
-  return new Date(
-    parseInt(p[3], 10),
-    parseInt(p[2], 10) - 1,
-    parseInt(p[1], 10),
-    parseInt(p[4], 10),
-    parseInt(p[5], 10),
-    parseInt(p[6] || '0', 10)
-  );
-}
+// timestampMs = epoch ms sent directly from Apps Script.
+// No string parsing. Works on every device, every re-login.
 
 function elapsedMs(v) {
-  if (!v || !v.timestamp) return null;
-  const d = parseTs(v.timestamp);
-  if (!d || isNaN(d.getTime())) return null;
-  return Math.max(0, Date.now() - d.getTime());
+  const ms = Number(v && v.timestampMs);
+  if (!ms || ms <= 0) return null; // no timestamp → treat as editable
+  return Math.max(0, Date.now() - ms);
 }
 
 function isEditLocked(v) {
   if (!v || String(v.status).toLowerCase() !== 'updated') return false;
   const e = elapsedMs(v);
-  if (e === null) return false;   // no timestamp → editable
+  if (e === null) return false;
   return e > EDIT_WINDOW_MS;
 }
 
@@ -1327,8 +1311,7 @@ function applySaveUI(ri, res, mode) {
     if (card) card.className = 'm-card is-updated';
   }
   const v = vehicles.find(x => x.rowIndex === ri);
-  if (v) { v.status='Updated'; v.timestamp=res.timestamp; v.startPrice=res.startPrice; v.savedAtMs=res.savedAtMs; }
-  if (v) recordSaveTime(v);
+  if (v) { v.status='Updated'; v.timestamp=res.timestamp; v.startPrice=res.startPrice; v.timestampMs=res.timestampMs; }
   renderStats();
 }
 
@@ -1452,9 +1435,8 @@ async function sheetSave() {
     // update local state
     const v = vehicles.find(x => x.rowIndex === ri);
     if (v) {
-      v.status = 'Updated'; v.timestamp = res.timestamp;
-      v.startPrice = res.startPrice; v.savedAtMs = res.savedAtMs;
-      v.tvscPrice = tv; v.expectedPrice = ex;
+      v.status = 'Updated'; v.timestamp = res.timestamp; v.timestampMs = res.timestampMs;
+      v.startPrice = res.startPrice; v.tvscPrice = tv; v.expectedPrice = ex;
       recordSaveTime(v);
     }
     // update card in DOM
