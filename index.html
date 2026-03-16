@@ -127,8 +127,8 @@ input,select{font-family:var(--font)}
   background:rgba(255,255,255,.15);
   display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
 }
-.hdr-title{font-size:16px;font-weight:700;color:var(--white);letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hdr-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.hdr-title{font-size:16px;font-weight:700;color:var(--white);letter-spacing:-.2px}
+.hdr-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:1px;line-height:1.4}
 .hdr-right{display:flex;align-items:center;gap:10px}
 .badge-role{
   font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.3px;
@@ -432,17 +432,17 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 ════════════════════════════════════════════════════════════ */
 @media(max-width:768px){
   .table-area{padding:12px 14px}
-  .header{padding:0 12px;height:58px}
+  .header{padding:0 12px;height:auto;min-height:58px;padding-top:10px;padding-bottom:10px}
   .login-card{padding:36px 24px 32px}
   .table-wrap,.pivot-wrap{display:none}
   .m-cards{display:flex}
-  .stats-bar{top:58px}
+  .stats-bar{top:0;position:relative}
   .stats-bar .stat-num{font-size:26px}
   .stats-bar .stat-cell{padding:14px 12px}
-  .toolbar{top:128px}
+  .toolbar{top:0;position:relative}
   .search-wrap{max-width:none;flex:1}
   .hdr-title{font-size:13px}
-  .hdr-sub{font-size:11px;max-width:160px;color:rgba(255,255,255,.75)}
+  .hdr-sub{font-size:11px;max-width:none;color:rgba(255,255,255,.8);line-height:1.4}
   .refresh-chip span{display:none}
   .refresh-chip{margin-left:0}
   .btn-signout{padding:6px 10px;font-size:12px}
