@@ -605,10 +605,6 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
       <input class="sheet-input" type="number" id="sh-ex" placeholder="Enter reserved price" min="0"
              oninput="sheetPreview()"/>
     </div>
-    <div class="sheet-start" id="sh-start-box" style="display:none">
-      <span class="sheet-start-label">Start Price</span>
-      <span class="sheet-start-val" id="sh-start-val">—</span>
-    </div>
     <div class="sheet-validation-msg" id="sh-err"></div>
     <div class="sheet-btn-row" id="sh-btn-row"></div>
   </div>
@@ -1026,8 +1022,6 @@ function renderCards(list) {
   }
   document.getElementById('m-cards').innerHTML = list.map((v, i) => {
     const done = String(v.status).toLowerCase() === 'updated';
-    const hasTvsc = v.tvscPrice && Number(v.tvscPrice) > 0;
-    const hasExp  = v.expectedPrice && Number(v.expectedPrice) > 0;
     return `
     <div class="m-card ${done?'is-updated':'is-pending'}" onclick="openSheet(${v.rowIndex})" style="cursor:pointer">
       <div class="m-card-body">
@@ -1047,20 +1041,6 @@ function renderCards(list) {
           <div class="m-field"><label>Evaluator</label><span>${v.evaluatorName||'—'}</span></div>
           <div class="m-field"><label>Transmission</label><span>${v.transmission||'—'}</span></div>
           <div class="m-field"><label>Odometer</label><span>${v.speedometer?Number(v.speedometer).toLocaleString()+' km':'—'}</span></div>
-        </div>
-        <div class="card-price-strip">
-          <div class="card-price-item">
-            <label>TVSC</label>
-            <div class="cpv ${hasTvsc?'':'empty'}">${hasTvsc ? '₹'+Number(v.tvscPrice).toLocaleString() : 'Not set'}</div>
-          </div>
-          <div class="card-price-item">
-            <label>Expected</label>
-            <div class="cpv ${hasExp?'':'empty'}">${hasExp ? '₹'+Number(v.expectedPrice).toLocaleString() : 'Not set'}</div>
-          </div>
-          <div class="card-price-item">
-            <label>Start</label>
-            <div class="cpv ${v.startPrice?'':'empty'}">${v.startPrice ? '₹'+Number(v.startPrice).toLocaleString() : '—'}</div>
-          </div>
         </div>
         <div class="card-tap-hint ${done?'done':''}">
           ${done ? '✓ Tap to edit prices' : '👆 Tap to enter prices'}
@@ -1285,7 +1265,6 @@ function openSheet(ri) {
   exEl.className = 'sheet-input' + (done ? ' filled' : '');
 
   document.getElementById('sh-err').style.display = 'none';
-  sheetPreview();
 
   // ── 1-hour edit lock ──────────────────────────────────────
   let editLocked = false;
@@ -1396,14 +1375,6 @@ async function sheetSave() {
     if (st) { st.textContent='Updated'; st.className='status updated'; }
     const card = st?.closest('.m-card');
     if (card) card.className = 'm-card is-updated';
-    // re-render that card's price strip
-    const strip = card?.querySelector('.card-price-strip');
-    if (strip && v) {
-      strip.innerHTML = `
-        <div class="card-price-item"><label>TVSC</label><div class="cpv">₹${Number(v.tvscPrice).toLocaleString()}</div></div>
-        <div class="card-price-item"><label>Expected</label><div class="cpv">₹${Number(v.expectedPrice).toLocaleString()}</div></div>
-        <div class="card-price-item"><label>Start</label><div class="cpv">${v.startPrice ? '₹'+Number(v.startPrice).toLocaleString() : '—'}</div></div>`;
-    }
     const hint = card?.querySelector('.card-tap-hint');
     if (hint) { hint.textContent='✓ Tap to edit prices'; hint.className='card-tap-hint done'; }
     renderStats();
