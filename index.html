@@ -238,18 +238,16 @@ tbody tr:nth-child(even):hover td{background:#f8fafc}
 /* ── COLUMN WIDTHS ─────────────────────────────────────────── */
 table colgroup col:nth-child(1) {width:38px}   /* #          — fixed  */
 table colgroup col:nth-child(2) {width:94px}   /* Reg No.    — fixed  */
-table colgroup col:nth-child(3) {width:13%}    /* Make/Model — wrap   */
+table colgroup col:nth-child(3) {width:15%}    /* Make/Model — wrap   */
 table colgroup col:nth-child(4) {width:46px}   /* Year       — fixed  */
-table colgroup col:nth-child(5) {width:76px}   /* Fuel/Trans — fixed  */
-table colgroup col:nth-child(6) {width:11%}    /* Customer   — wrap   */
-table colgroup col:nth-child(7) {width:10%}    /* Evaluator  — wrap   */
-table colgroup col:nth-child(8) {width:72px}   /* Odometer   — fixed  */
-table colgroup col:nth-child(9) {width:96px}   /* TVSC       — fixed  */
-table colgroup col:nth-child(10){width:96px}   /* Expected   — fixed  */
-table colgroup col:nth-child(11){width:70px}   /* Start      — fixed  */
-table colgroup col:nth-child(12){width:76px}   /* Status     — fixed  */
-table colgroup col:nth-child(13){width:76px}   /* Timestamp  — fixed  */
-table colgroup col:nth-child(14){width:58px}   /* Action     — fixed  */
+table colgroup col:nth-child(5) {width:80px}   /* Fuel/Trans — fixed  */
+table colgroup col:nth-child(6) {width:13%}    /* Customer   — wrap   */
+table colgroup col:nth-child(7) {width:12%}    /* Evaluator  — wrap   */
+table colgroup col:nth-child(8) {width:80px}   /* Odometer   — fixed  */
+table colgroup col:nth-child(9) {width:104px}  /* TVSC       — fixed  */
+table colgroup col:nth-child(10){width:104px}  /* Expected   — fixed  */
+table colgroup col:nth-child(11){width:80px}   /* Status     — fixed  */
+table colgroup col:nth-child(12){width:64px}   /* Action     — fixed  */
 
 /* ── FIXED (no-wrap) columns helper ──────────────────────────  */
 td.td-fixed{white-space:nowrap;word-break:normal;overflow-wrap:normal}
@@ -504,8 +502,8 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
         <div class="table-wrap">
           <table>
             <colgroup>
-              <col/><col/><col/><col/><col/><col/><col/>
-              <col/><col/><col/><col/><col/><col/><col/>
+              <col/><col/><col/><col/><col/><col/>
+              <col/><col/><col/><col/><col/><col/>
             </colgroup>
             <thead><tr>
               <th>#</th>
@@ -518,9 +516,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
               <th>Odometer</th>
               <th>TVSC Price ₹</th>
               <th>Expected Price ₹</th>
-              <th>Start Price</th>
               <th>Status</th>
-              <th>Timestamp</th>
               <th>Action</th>
             </tr></thead>
             <tbody id="tbody"></tbody>
@@ -660,7 +656,7 @@ async function loadVehicles() {
 
 function showLoading() {
   document.getElementById('tbody').innerHTML =
-    '<tr><td colspan="14"><div class="loader"><div class="spin"></div><span>Loading vehicles…</span></div></td></tr>';
+    '<tr><td colspan="12"><div class="loader"><div class="spin"></div><span>Loading vehicles…</span></div></td></tr>';
   document.getElementById('m-cards').innerHTML =
     '<div class="loader"><div class="spin"></div><span>Loading…</span></div>';
 }
@@ -715,12 +711,11 @@ function buildEvalFilter() {
 function renderTable(list) {
   if (!list.length) {
     document.getElementById('tbody').innerHTML =
-      '<tr><td colspan="14"><div class="empty"><div class="empty-ico">🚗</div><p>No vehicles found</p></div></td></tr>';
+      '<tr><td colspan="12"><div class="empty"><div class="empty-ico">🚗</div><p>No vehicles found</p></div></td></tr>';
     return;
   }
   document.getElementById('tbody').innerHTML = list.map((v, i) => {
     const done   = String(v.status).toLowerCase() === 'updated';
-    const spShow = v.startPrice || calcStart(v.expectedPrice);
     const fuelTrans = [v.fuelType, v.transmission].filter(Boolean).join(' / ') || '—';
     return `<tr>
       <td class="td-num">${i+1}</td>
@@ -750,17 +745,9 @@ function renderTable(list) {
         </div>
       </td>
       <td class="td-fixed">
-        <span class="start-val ${spShow?'':'empty'}" id="sp-${v.rowIndex}">
-          ${spShow ? '₹&nbsp;'+Number(spShow).toLocaleString() : '—'}
-        </span>
-      </td>
-      <td class="td-fixed">
         <span class="status ${done?'updated':'pending'}" id="st-${v.rowIndex}">
           ${v.status||'Pending'}
         </span>
-      </td>
-      <td class="td-fixed" style="font-size:11px;color:var(--muted)" id="ts-${v.rowIndex}">
-        ${v.timestamp ? v.timestamp.split(' ')[0] : '—'}
       </td>
       <td class="td-fixed">
         <button class="btn-save ${done?'done':''}" id="sb-${v.rowIndex}"
@@ -815,9 +802,7 @@ function renderCards(list) {
           </div>
         </div>
         <div class="m-footer">
-          <div class="m-start" id="mc-sp-${v.rowIndex}">
-            Start: ${spShow ? '₹ '+Number(spShow).toLocaleString() : 'Auto-calc'}
-          </div>
+          <div class="m-start" id="mc-sp-${v.rowIndex}" style="visibility:hidden">—</div>
           <button class="btn-save ${done?'done':''}" id="mc-sb-${v.rowIndex}"
                   onclick="saveM(${v.rowIndex})">${done?'✓ Saved':'Save'}</button>
         </div>
@@ -891,13 +876,9 @@ async function saveM(ri) {
 function applySaveUI(ri, res, mode) {
   if (mode === 'desktop') {
     const btn = document.getElementById('sb-'+ri);
-    if (btn) { btn.disabled=false; btn.textContent='✓ Saved'; btn.className='btn-save done'; }
+    if (btn) { btn.disabled=false; btn.textContent='✓'; btn.className='btn-save done'; }
     const st = document.getElementById('st-'+ri);
     if (st) { st.textContent='Updated'; st.className='status updated'; }
-    const ts = document.getElementById('ts-'+ri);
-    if (ts) ts.textContent = res.timestamp;
-    const sp = document.getElementById('sp-'+ri);
-    if (sp) { sp.textContent='₹ '+Number(res.startPrice).toLocaleString(); sp.className='start-val'; }
     ['tv-','ex-'].forEach(p => { const el=document.getElementById(p+ri); if(el) el.classList.add('filled'); });
   } else {
     const btn = document.getElementById('mc-sb-'+ri);
