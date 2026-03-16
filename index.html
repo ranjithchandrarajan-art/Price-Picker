@@ -354,6 +354,112 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .idx-circle.updated{background:#dcfce7;color:#15803d;border:1.5px solid #bbf7d0}
 .idx-circle.pending{background:#fff7ed;color:var(--orange);border:1.5px solid #fed7aa}
 
+/* ── CARD PRICE SUMMARY STRIP ──────────────────────────────── */
+.card-price-strip{
+  display:flex;gap:10px;padding:10px 0 0;
+  border-top:1px solid var(--border);margin-top:10px;
+}
+.card-price-item{flex:1;text-align:center}
+.card-price-item label{
+  display:block;font-size:9.5px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;
+}
+.card-price-item .cpv{font-size:13px;font-weight:700;color:var(--navy)}
+.card-price-item .cpv.empty{color:var(--muted2);font-weight:400;font-size:12px}
+.card-tap-hint{
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  font-size:11px;color:var(--muted);margin-top:8px;
+}
+.card-tap-hint.done{color:var(--green)}
+
+/* ════════════════════════════════════════════════════════════
+   BOTTOM SHEET MODAL
+════════════════════════════════════════════════════════════ */
+#sheet-overlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.45);
+  animation:fadeIn .2s ease;
+}
+#sheet-overlay.open{display:block}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+#bottom-sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:501;
+  background:var(--white);
+  border-radius:20px 20px 0 0;
+  padding:0 0 env(safe-area-inset-bottom,0);
+  transform:translateY(100%);
+  transition:transform .32s cubic-bezier(.32,1,.23,1);
+  box-shadow:0 -8px 32px rgba(0,0,0,.18);
+  max-height:92vh;overflow-y:auto;
+}
+#bottom-sheet.open{transform:translateY(0)}
+
+.sheet-handle{
+  width:40px;height:4px;background:var(--border2);
+  border-radius:4px;margin:12px auto 0;
+}
+.sheet-header{
+  padding:16px 20px 12px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;
+}
+.sheet-reg{font-family:inherit;font-size:18px;font-weight:800;color:var(--navy);letter-spacing:-.3px}
+.sheet-model{font-size:13px;font-weight:500;color:var(--muted);margin-top:2px}
+.sheet-close{
+  width:32px;height:32px;border-radius:50%;background:var(--bg);
+  border:1px solid var(--border);display:flex;align-items:center;
+  justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;
+  color:var(--muted);transition:.15s;
+}
+.sheet-close:hover{background:var(--border);color:var(--text)}
+.sheet-body{padding:20px}
+
+.sheet-field{margin-bottom:16px}
+.sheet-field label{
+  display:block;font-size:11px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;
+}
+.sheet-input{
+  width:100%;padding:13px 16px;
+  background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);
+  color:var(--text);font-size:16px;font-weight:500;transition:.2s;
+}
+.sheet-input:focus{outline:none;border-color:var(--navy);background:var(--white);box-shadow:0 0 0 3px rgba(30,45,120,.08)}
+.sheet-input.filled{border-color:#bbf7d0;background:#f0fdf4}
+.sheet-input.editing{border-color:var(--navy) !important;background:var(--white) !important}
+.sheet-input.err{border-color:var(--red) !important;background:#fef2f2 !important;animation:shake .3s ease}
+.sheet-input:disabled{opacity:.7;cursor:default}
+
+.sheet-start{
+  background:var(--green-bg);border:1px solid var(--green-bdr);
+  border-radius:var(--radius);padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;
+}
+.sheet-start-label{font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.6px}
+.sheet-start-val{font-size:18px;font-weight:800;color:var(--green)}
+
+.sheet-btn-row{display:flex;gap:10px}
+.btn-sheet-save{
+  flex:1;padding:15px;background:var(--navy);color:var(--white);
+  font-weight:700;font-size:15px;border-radius:var(--radius);
+  transition:.2s;letter-spacing:.2px;
+}
+.btn-sheet-save:hover:not(:disabled){background:var(--navy-dark)}
+.btn-sheet-save:disabled{opacity:.4;cursor:not-allowed}
+.btn-sheet-edit{
+  padding:15px 20px;background:transparent;color:var(--navy);
+  font-weight:700;font-size:15px;border-radius:var(--radius);
+  border:2px solid var(--navy);transition:.2s;
+}
+.btn-sheet-edit:hover{background:var(--navy);color:var(--white)}
+.sheet-validation-msg{
+  font-size:12px;color:var(--red);margin-top:8px;
+  padding:8px 12px;background:#fef2f2;border:1px solid #fecaca;
+  border-radius:8px;display:none;
+}
+
 /* ════════════════════════════════════════════════════════════
    MOBILE CARDS
 ════════════════════════════════════════════════════════════ */
@@ -370,16 +476,10 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .m-card-reg{font-weight:800;font-size:16px;color:var(--navy);letter-spacing:-.3px}
 .m-card-model{font-weight:600;font-size:14px;color:var(--text);margin-top:2px}
 .m-card-meta{font-size:12px;color:var(--muted);margin-top:3px}
-.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
 .m-field label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;
   letter-spacing:.5px;display:block;margin-bottom:4px}
 .m-field span{font-size:13px;font-weight:500;color:var(--text2)}
-.m-prices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.m-prices .pi{width:100%}
-.m-prices .m-field label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
-.m-footer{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border)}
-.m-start{font-size:13px;font-weight:700;color:var(--green)}
-.m-ts{font-size:11px;color:var(--muted);margin-top:8px}
 
 /* ════════════════════════════════════════════════════════════
    PIVOT TABLE
@@ -454,8 +554,8 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
   /* Toolbar — compact, sticky */
   .toolbar{position:sticky;z-index:97;padding:8px 12px;gap:8px}
   .search-wrap{max-width:none;flex:1}
-  .refresh-chip span{display:none}
-  .refresh-chip{margin-left:0}
+  .refresh-chip{margin-left:0;font-size:11px}
+  .refresh-chip span{display:inline}
 
   .table-wrap,.pivot-wrap{display:none}
   .m-cards{display:flex}
@@ -469,6 +569,37 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 </head>
 <body>
 <div id="app">
+
+<!-- ══ BOTTOM SHEET ═══════════════════════════════════════════ -->
+<div id="sheet-overlay" onclick="closeSheet()"></div>
+<div id="bottom-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div>
+      <div class="sheet-reg" id="sh-reg"></div>
+      <div class="sheet-model" id="sh-model"></div>
+    </div>
+    <div class="sheet-close" onclick="closeSheet()">✕</div>
+  </div>
+  <div class="sheet-body">
+    <div class="sheet-field">
+      <label>TVSC Price ₹ <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(Market price)</span></label>
+      <input class="sheet-input" type="number" id="sh-tv" placeholder="Enter market price" min="0"
+             oninput="sheetPreview()"/>
+    </div>
+    <div class="sheet-field">
+      <label>Expected Price ₹ <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(Reserved price)</span></label>
+      <input class="sheet-input" type="number" id="sh-ex" placeholder="Enter reserved price" min="0"
+             oninput="sheetPreview()"/>
+    </div>
+    <div class="sheet-start" id="sh-start-box" style="display:none">
+      <span class="sheet-start-label">Start Price</span>
+      <span class="sheet-start-val" id="sh-start-val">—</span>
+    </div>
+    <div class="sheet-validation-msg" id="sh-err"></div>
+    <div class="sheet-btn-row" id="sh-btn-row"></div>
+  </div>
+</div>
 
   <!-- ══ LOGIN ═════════════════════════════════════════════════ -->
   <div id="login-page" style="display:flex;flex:1">
@@ -843,21 +974,20 @@ function renderCards(list) {
     return;
   }
   document.getElementById('m-cards').innerHTML = list.map((v, i) => {
-    const done   = String(v.status).toLowerCase() === 'updated';
-    const locked = done ? 'disabled' : '';
+    const done = String(v.status).toLowerCase() === 'updated';
+    const hasTvsc = v.tvscPrice && Number(v.tvscPrice) > 0;
+    const hasExp  = v.expectedPrice && Number(v.expectedPrice) > 0;
     return `
-    <div class="m-card ${done?'is-updated':'is-pending'}">
+    <div class="m-card ${done?'is-updated':'is-pending'}" onclick="openSheet(${v.rowIndex})" style="cursor:pointer">
       <div class="m-card-body">
         <div class="m-card-top">
           <div>
             <div class="m-card-reg">${v.registrationNumber}</div>
             <div class="m-card-model">${v.makeModel}</div>
-            <div class="m-card-meta">${v.yearOfMfg||''} · ${v.fuelType||''} · ${v.colorId||''}</div>
+            <div class="m-card-meta">${[v.yearOfMfg,v.fuelType,v.colorId].filter(Boolean).join(' · ')}</div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-            <span class="status ${done?'updated':'pending'}" id="mc-st-${v.rowIndex}">
-              ${v.status||'Pending'}
-            </span>
+            <span class="status ${done?'updated':'pending'}" id="mc-st-${v.rowIndex}">${v.status||'Pending'}</span>
             <div class="idx-circle ${done?'updated':'pending'}">${i+1}</div>
           </div>
         </div>
@@ -867,28 +997,22 @@ function renderCards(list) {
           <div class="m-field"><label>Transmission</label><span>${v.transmission||'—'}</span></div>
           <div class="m-field"><label>Odometer</label><span>${v.speedometer?Number(v.speedometer).toLocaleString()+' km':'—'}</span></div>
         </div>
-        <div class="m-prices">
-          <div class="m-field">
-            <label>TVSC Price ₹</label>
-            <input class="pi ${done?'filled':''}" type="number" id="mc-tv-${v.rowIndex}"
-                   value="${v.tvscPrice||''}" placeholder="Market price" min="0" ${locked}
-                   oninput="previewStartM(${v.rowIndex})"/>
+        <div class="card-price-strip">
+          <div class="card-price-item">
+            <label>TVSC</label>
+            <div class="cpv ${hasTvsc?'':'empty'}">${hasTvsc ? '₹'+Number(v.tvscPrice).toLocaleString() : 'Not set'}</div>
           </div>
-          <div class="m-field">
-            <label>Expected Price ₹</label>
-            <input class="pi ${done?'filled':''}" type="number" id="mc-ex-${v.rowIndex}"
-                   value="${v.expectedPrice||''}" placeholder="Reserved price" min="0" ${locked}
-                   oninput="previewStartM(${v.rowIndex})"/>
+          <div class="card-price-item">
+            <label>Expected</label>
+            <div class="cpv ${hasExp?'':'empty'}">${hasExp ? '₹'+Number(v.expectedPrice).toLocaleString() : 'Not set'}</div>
+          </div>
+          <div class="card-price-item">
+            <label>Start</label>
+            <div class="cpv ${v.startPrice?'':'empty'}">${v.startPrice ? '₹'+Number(v.startPrice).toLocaleString() : '—'}</div>
           </div>
         </div>
-        <div class="m-footer">
-          <div class="m-ts" id="mc-ts-${v.rowIndex}" style="font-size:11px;color:var(--muted)">
-            ${v.timestamp ? 'Saved: '+v.timestamp : ''}
-          </div>
-          ${done
-            ? `<button class="btn-edit" id="mc-sb-${v.rowIndex}" onclick="enableEdit(${v.rowIndex},'mobile')">✏ Edit</button>`
-            : `<button class="btn-save" id="mc-sb-${v.rowIndex}" onclick="saveM(${v.rowIndex})">Save</button>`
-          }
+        <div class="card-tap-hint ${done?'done':''}">
+          ${done ? '✓ Tap to edit prices' : '👆 Tap to enter prices'}
         </div>
       </div>
     </div>`;
@@ -1064,8 +1188,137 @@ function applySaveUI(ri, res, mode) {
 
 
 // ══════════════════════════════════════════════════════════════
-// PIVOT
+// BOTTOM SHEET
 // ══════════════════════════════════════════════════════════════
+let _sheetRowIndex = null;
+
+function openSheet(ri) {
+  const v = vehicles.find(x => x.rowIndex === ri);
+  if (!v) return;
+  _sheetRowIndex = ri;
+  const done = String(v.status).toLowerCase() === 'updated';
+
+  document.getElementById('sh-reg').textContent   = v.registrationNumber;
+  document.getElementById('sh-model').textContent = v.makeModel + (v.yearOfMfg ? ' · ' + v.yearOfMfg : '');
+
+  const tvEl = document.getElementById('sh-tv');
+  const exEl = document.getElementById('sh-ex');
+  tvEl.value = v.tvscPrice || '';
+  exEl.value = v.expectedPrice || '';
+  tvEl.disabled = done;
+  exEl.disabled = done;
+  tvEl.className = 'sheet-input' + (done ? ' filled' : '');
+  exEl.className = 'sheet-input' + (done ? ' filled' : '');
+
+  document.getElementById('sh-err').style.display = 'none';
+  sheetPreview();
+
+  // buttons
+  document.getElementById('sh-btn-row').innerHTML = done
+    ? `<button class="btn-sheet-edit" onclick="sheetEnableEdit()">✏ Edit Prices</button>
+       <button class="btn-sheet-save" style="background:var(--green)" disabled>✓ Saved</button>`
+    : `<button class="btn-sheet-save" onclick="sheetSave()">Save Prices</button>`;
+
+  document.getElementById('sheet-overlay').classList.add('open');
+  document.getElementById('bottom-sheet').classList.add('open');
+  // focus first empty input
+  setTimeout(() => { if (!done) (tvEl.value ? exEl : tvEl).focus(); }, 350);
+}
+
+function closeSheet() {
+  document.getElementById('sheet-overlay').classList.remove('open');
+  document.getElementById('bottom-sheet').classList.remove('open');
+  _sheetRowIndex = null;
+}
+
+function sheetEnableEdit() {
+  const tvEl = document.getElementById('sh-tv');
+  const exEl = document.getElementById('sh-ex');
+  tvEl.disabled = false; tvEl.className = 'sheet-input editing';
+  exEl.disabled = false; exEl.className = 'sheet-input editing';
+  document.getElementById('sh-btn-row').innerHTML =
+    `<button class="btn-sheet-save" onclick="sheetSave()">Save Prices</button>`;
+  tvEl.focus();
+  toast('Prices unlocked for editing.', 'ok');
+}
+
+function sheetPreview() {
+  const tv  = document.getElementById('sh-tv')?.value;
+  const ex  = document.getElementById('sh-ex')?.value;
+  const sp  = calcStart(ex, tv);
+  const box = document.getElementById('sh-start-box');
+  const val = document.getElementById('sh-start-val');
+  if (sp != null) {
+    box.style.display = 'flex';
+    val.textContent   = '₹ ' + sp.toLocaleString();
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+async function sheetSave() {
+  const ri  = _sheetRowIndex;
+  const tvEl = document.getElementById('sh-tv');
+  const exEl = document.getElementById('sh-ex');
+  const tv = tvEl?.value?.trim();
+  const ex = exEl?.value?.trim();
+  const errEl = document.getElementById('sh-err');
+
+  errEl.style.display = 'none';
+  if (!tv) { errEl.textContent = 'TVSC Price is required.'; errEl.style.display='block'; tvEl.focus(); return; }
+  if (!ex) { errEl.textContent = 'Expected Price is required.'; errEl.style.display='block'; exEl.focus(); return; }
+  if (Number(tv) > Number(ex)) {
+    errEl.textContent = 'TVSC Price must be ≤ Expected Price.';
+    errEl.style.display = 'block';
+    tvEl.classList.add('err');
+    setTimeout(() => tvEl.classList.remove('err'), 1800);
+    return;
+  }
+
+  const btn = document.getElementById('sh-btn-row').querySelector('.btn-sheet-save');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    const res = await apiPost({ action:'save', rowIndex:ri, tvscPrice:tv, expectedPrice:ex });
+    if (!res.success) {
+      errEl.textContent = 'Save failed: ' + res.message;
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Save Prices';
+      return;
+    }
+    // update local state
+    const v = vehicles.find(x => x.rowIndex === ri);
+    if (v) {
+      v.status = 'Updated'; v.timestamp = res.timestamp;
+      v.startPrice = res.startPrice;
+      v.tvscPrice = tv; v.expectedPrice = ex;
+    }
+    // update card in DOM
+    const st = document.getElementById('mc-st-'+ri);
+    if (st) { st.textContent='Updated'; st.className='status updated'; }
+    const card = st?.closest('.m-card');
+    if (card) card.className = 'm-card is-updated';
+    // re-render that card's price strip
+    const strip = card?.querySelector('.card-price-strip');
+    if (strip && v) {
+      strip.innerHTML = `
+        <div class="card-price-item"><label>TVSC</label><div class="cpv">₹${Number(v.tvscPrice).toLocaleString()}</div></div>
+        <div class="card-price-item"><label>Expected</label><div class="cpv">₹${Number(v.expectedPrice).toLocaleString()}</div></div>
+        <div class="card-price-item"><label>Start</label><div class="cpv">${v.startPrice ? '₹'+Number(v.startPrice).toLocaleString() : '—'}</div></div>`;
+    }
+    const hint = card?.querySelector('.card-tap-hint');
+    if (hint) { hint.textContent='✓ Tap to edit prices'; hint.className='card-tap-hint done'; }
+    renderStats();
+    closeSheet();
+    toast('Prices saved successfully!', 'ok');
+  } catch(e) {
+    errEl.textContent = 'Network error. Please retry.';
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Save Prices';
+  }
+}
+
+
 function renderPivot() {
   const entries = Object.entries(pivotData).sort((a,b) => b[1].total - a[1].total);
   if (!entries.length) {
