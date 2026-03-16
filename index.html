@@ -1071,7 +1071,7 @@ function renderCards(list) {
 }
 
 // ── TIMESTAMP HELPERS ────────────────────────────────────────
-const EDIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const EDIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
 
 // ── Persisted save-times in localStorage (survives page refresh) ──
 const LS_SAVES_KEY = 'aeval_save_times';
@@ -1201,11 +1201,10 @@ function enableEdit(ri, mode) {
   // 1-hour lock check
   const v = vehicles.find(x => x.rowIndex === ri);
   if (v && isEditLocked(v.rowIndex, v.timestamp)) {
-    const saved   = parseTimestamp(v.timestamp);
-    const diffMin = (Date.now() - saved.getTime()) / 60000;
-    const hrs = Math.floor(diffMin / 60);
-    const min = Math.round(diffMin % 60);
-    toast(`🔒 Editing locked — saved ${hrs > 0 ? hrs+'h ' : ''}${min}m ago (limit: 1 hour).`, 'err');
+    const elapsed = msElapsed(v.rowIndex, v.timestamp);
+    const diffMin = Math.floor(elapsed / 60000);
+    const diffSec = Math.round((elapsed % 60000) / 1000);
+    toast(`🔒 Editing locked — saved ${diffMin}m ${diffSec}s ago (limit: 2 min).`, 'err');
     return;
   }
   if (mode === 'desktop') {
@@ -1354,16 +1353,15 @@ function openSheet(ri) {
 
   document.getElementById('sh-err').style.display = 'none';
 
-  // ── 1-hour edit lock ──────────────────────────────────────
+  // ── 2-minute edit lock ────────────────────────────────────
   let editLocked = false;
   let lockMsg = '';
   if (done && isEditLocked(v.rowIndex, v.timestamp)) {
     editLocked = true;
-    const saved   = parseTimestamp(v.timestamp);
-    const diffMin = (Date.now() - saved.getTime()) / 60000;
-    const hrs = Math.floor(diffMin / 60);
-    const min = Math.round(diffMin % 60);
-    lockMsg = `Saved ${hrs > 0 ? hrs+'h ' : ''}${min}m ago — editing locked after 1 hour.`;
+    const elapsed = msElapsed(v.rowIndex, v.timestamp);
+    const diffMin = Math.floor(elapsed / 60000);
+    const diffSec = Math.round((elapsed % 60000) / 1000);
+    lockMsg = `Saved ${diffMin}m ${diffSec}s ago — editing locked after 2 minutes.`;
   }
 
   // buttons
@@ -1371,8 +1369,9 @@ function openSheet(ri) {
     document.getElementById('sh-btn-row').innerHTML =
       `<button class="btn-sheet-save" onclick="sheetSave()">Save Prices</button>`;
   } else if (editLocked) {
+    // Edit button completely hidden — only show ✓ Saved
     document.getElementById('sh-btn-row').innerHTML =
-      `<button class="btn-sheet-save" style="background:var(--green)" disabled>✓ Saved</button>`;
+      `<button class="btn-sheet-save" style="background:var(--green);width:100%" disabled>✓ Saved</button>`;
     const errEl = document.getElementById('sh-err');
     errEl.textContent = '🔒 ' + lockMsg;
     errEl.style.display = 'block';
