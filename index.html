@@ -1070,6 +1070,19 @@ function renderCards(list) {
   }).join('');
 }
 
+// ── TIMESTAMP HELPERS ────────────────────────────────────────
+function parseTimestamp(ts) {
+  if (!ts) return null;
+  const p = ts.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
+  if (!p) return null;
+  return new Date(p[3], p[2]-1, p[1], p[4], p[5]);
+}
+function isOlderThanHour(ts) {
+  const d = parseTimestamp(ts);
+  if (!d) return false;
+  return (Date.now() - d.getTime()) > 60 * 60 * 1000;
+}
+
 // ══════════════════════════════════════════════════════════════
 // START PRICE
 // ══════════════════════════════════════════════════════════════
@@ -1120,18 +1133,13 @@ function validatePrices(tv, ex, prefix) {
 function enableEdit(ri, mode) {
   // 1-hour lock check
   const v = vehicles.find(x => x.rowIndex === ri);
-  if (v && v.timestamp) {
-    const parts = v.timestamp.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
-    if (parts) {
-      const saved   = new Date(parts[3], parts[2]-1, parts[1], parts[4], parts[5]);
-      const diffMin = (Date.now() - saved.getTime()) / 60000;
-      if (diffMin > 60) {
-        const hrs = Math.floor(diffMin / 60);
-        const min = Math.round(diffMin % 60);
-        toast(`🔒 Editing locked — saved ${hrs > 0 ? hrs+'h ' : ''}${min}m ago (limit: 1 hour).`, 'err');
-        return;
-      }
-    }
+  if (v && isOlderThanHour(v.timestamp)) {
+    const saved   = parseTimestamp(v.timestamp);
+    const diffMin = (Date.now() - saved.getTime()) / 60000;
+    const hrs = Math.floor(diffMin / 60);
+    const min = Math.round(diffMin % 60);
+    toast(`🔒 Editing locked — saved ${hrs > 0 ? hrs+'h ' : ''}${min}m ago (limit: 1 hour).`, 'err');
+    return;
   }
   if (mode === 'desktop') {
     ['tv-','ex-'].forEach(p => {
@@ -1282,19 +1290,13 @@ function openSheet(ri) {
   // ── 1-hour edit lock ──────────────────────────────────────
   let editLocked = false;
   let lockMsg = '';
-  if (done && v.timestamp) {
-    // timestamp format: "dd-MM-yyyy HH:mm"
-    const parts  = v.timestamp.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
-    if (parts) {
-      const saved  = new Date(parts[3], parts[2]-1, parts[1], parts[4], parts[5]);
-      const diffMin = (Date.now() - saved.getTime()) / 60000;
-      if (diffMin > 60) {
-        editLocked = true;
-        const hrs = Math.floor(diffMin / 60);
-        const min = Math.round(diffMin % 60);
-        lockMsg = `Saved ${hrs > 0 ? hrs+'h ' : ''}${min}m ago — editing locked after 1 hour.`;
-      }
-    }
+  if (done && isOlderThanHour(v.timestamp)) {
+    editLocked = true;
+    const saved   = parseTimestamp(v.timestamp);
+    const diffMin = (Date.now() - saved.getTime()) / 60000;
+    const hrs = Math.floor(diffMin / 60);
+    const min = Math.round(diffMin % 60);
+    lockMsg = `Saved ${hrs > 0 ? hrs+'h ' : ''}${min}m ago — editing locked after 1 hour.`;
   }
 
   // buttons
