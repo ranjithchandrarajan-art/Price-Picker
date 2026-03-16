@@ -1208,9 +1208,15 @@ function validatePrices(tv, ex, prefix) {
 // ══════════════════════════════════════════════════════════════
 function enableEdit(ri, mode) {
   const v = vehicles.find(x => x.rowIndex === ri);
-  if (v && isEditLocked(v)) {
-    toast(`🔒 Editing locked — saved ${fmtElapsed(v)} ago (limit: 2 min).`, 'err');
-    return;
+  if (v && v.timestamp && String(v.status).toLowerCase() === 'updated') {
+    const p = String(v.timestamp).match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+    if (p) {
+      const saved = new Date(+p[3], +p[2]-1, +p[1], +p[4], +p[5], +p[6]);
+      if ((Date.now() - saved.getTime()) > 120000) {
+        toast('🔒 Editing locked after 2 minutes.', 'err');
+        return;
+      }
+    }
   }
   if (mode === 'desktop') {
     ['tv-','ex-'].forEach(p => {
@@ -1357,11 +1363,15 @@ function openSheet(ri) {
 
   document.getElementById('sh-err').style.display = 'none';
 
-  // ── 2-minute edit lock ────────────────────────────────────
-  const editLocked = done && isEditLocked(v);
-  const lockMsg = editLocked
-    ? `Saved ${fmtElapsed(v)} ago — editing locked after 2 minutes.`
-    : '';
+  // ── Simple 2-min lock: parse timestamp right here ────────────
+  let editLocked = false;
+  if (done && v.timestamp) {
+    const p = String(v.timestamp).match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+    if (p) {
+      const saved = new Date(+p[3], +p[2]-1, +p[1], +p[4], +p[5], +p[6]);
+      editLocked = (Date.now() - saved.getTime()) > 120000;
+    }
+  }
 
   // buttons
   if (!done) {
@@ -1371,7 +1381,7 @@ function openSheet(ri) {
     document.getElementById('sh-btn-row').innerHTML =
       `<button class="btn-sheet-save" style="background:var(--green);width:100%" disabled>✓ Saved</button>`;
     const errEl = document.getElementById('sh-err');
-    errEl.textContent = '🔒 ' + lockMsg;
+    errEl.textContent = '🔒 Editing locked after 2 minutes.';
     errEl.style.display = 'block';
     errEl.style.background = '#fff7ed';
     errEl.style.borderColor = '#fed7aa';
