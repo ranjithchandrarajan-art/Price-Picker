@@ -327,6 +327,18 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .rupee{color:var(--muted);font-size:12px}
 .start-val{font-weight:700;color:var(--green);font-size:13px}
 .start-val.empty{color:var(--muted);font-weight:400}
+/* read-only price display in table */
+.cprice{font-weight:600;font-size:12.5px;color:var(--navy)}
+.cprice.empty{color:var(--muted2);font-weight:400;font-size:12px}
+.lock-badge{font-size:14px;cursor:not-allowed;opacity:.6;display:inline-block}
+.edit-hint{
+  font-size:11px;font-weight:600;color:var(--navy);
+  padding:3px 8px;border-radius:6px;border:1.5px solid var(--navy);
+  cursor:pointer;display:inline-block;transition:.15s;
+}
+.edit-hint:hover{background:var(--navy);color:var(--white)}
+.edit-hint.pending-hint{color:var(--orange);border-color:var(--orange)}
+.edit-hint.pending-hint:hover{background:var(--orange);color:var(--white)}
 
 /* ── SAVE / EDIT BUTTONS ────────────────────────────────────── */
 .btn-save{
@@ -560,6 +572,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
   .table-wrap,.pivot-wrap{display:none}
   .m-cards{display:flex}
 }
+
 @media(max-width:480px){
   .stats-bar{grid-template-columns:1fr 1fr 1fr}
   .stats-bar .stat-num{font-size:20px}
@@ -614,7 +627,8 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
       <label class="field-label">Mobile Number</label>
       <input class="field-input" type="tel" id="mob" maxlength="10"
              placeholder="Enter 10-digit mobile number"
-             onkeydown="if(event.key==='Enter')login()"/>
+             onkeydown="if(event.key==='Enter')login()"
+             oninput="this.style.background='';this.style.borderColor=''"/>
       <button class="btn-signin" id="login-btn" onclick="login()">Sign In</button>
       <div class="err-box" id="login-err"></div>
     </div>
@@ -758,6 +772,20 @@ let user = null;
 let vehicles = [];
 let pivotData = {};
 
+// ── MOBILE NUMBER CACHE ───────────────────────────────────────
+const LS_MOB_KEY = 'aeval_last_mobile';
+window.addEventListener('DOMContentLoaded', () => {
+  const cached = localStorage.getItem(LS_MOB_KEY);
+  if (cached) {
+    const inp = document.getElementById('mob');
+    if (inp) {
+      inp.value = cached;
+      inp.style.background = '#f0fdf4';
+      inp.style.borderColor = '#bbf7d0';
+    }
+  }
+});
+
 // ══════════════════════════════════════════════════════════════
 // API
 // ══════════════════════════════════════════════════════════════
@@ -786,6 +814,7 @@ async function login() {
     setBtnLoading(false);
     if (!res.success) { showErr(res.message); return; }
     user = res.user;
+    localStorage.setItem(LS_MOB_KEY, mob); // cache for next login
     document.getElementById('login-err').style.display = 'none';
     document.getElementById('login-page').style.display = 'none';
     document.getElementById('main-page').style.display = 'flex';
@@ -918,10 +947,12 @@ function renderTable(list) {
     return;
   }
   document.getElementById('tbody').innerHTML = list.map((v, i) => {
-    const done   = String(v.status).toLowerCase() === 'updated';
+    const done     = String(v.status).toLowerCase() === 'updated';
     const fuelTrans = [v.fuelType, v.transmission].filter(Boolean).join(' / ') || '—';
-    const locked = done ? 'disabled' : '';
-    return `<tr>
+    const locked1h = done && isOlderThanHour(v.timestamp);
+    const hasTvsc  = v.tvscPrice && Number(v.tvscPrice) > 0;
+    const hasExp   = v.expectedPrice && Number(v.expectedPrice) > 0;
+    return `<tr style="cursor:pointer" onclick="openSheet(${v.rowIndex})">
       <td class="td-num">${i+1}</td>
       <td class="td-fixed"><span class="reg">${v.registrationNumber}</span></td>
       <td>
@@ -934,30 +965,20 @@ function renderTable(list) {
       <td><div class="eval-name">${v.evaluatorName||'—'}</div></td>
       <td class="td-fixed sub-text">${v.speedometer ? Number(v.speedometer).toLocaleString()+' km' : '—'}</td>
       <td class="td-fixed">
-        <div class="price-cell">
-          <span class="rupee">₹</span>
-          <input class="pi ${done?'filled':''}" type="number" id="tv-${v.rowIndex}"
-                 value="${v.tvscPrice||''}" placeholder="0" min="0" ${locked}
-                 oninput="previewStart(${v.rowIndex})"/>
-        </div>
+        <span class="${hasTvsc?'cprice':'cprice empty'}">${hasTvsc ? '₹'+Number(v.tvscPrice).toLocaleString() : '—'}</span>
       </td>
       <td class="td-fixed">
-        <div class="price-cell">
-          <span class="rupee">₹</span>
-          <input class="pi ${done?'filled':''}" type="number" id="ex-${v.rowIndex}"
-                 value="${v.expectedPrice||''}" placeholder="0" min="0" ${locked}
-                 oninput="previewStart(${v.rowIndex})"/>
-        </div>
+        <span class="${hasExp?'cprice':'cprice empty'}">${hasExp ? '₹'+Number(v.expectedPrice).toLocaleString() : '—'}</span>
       </td>
       <td class="td-fixed">
-        <span class="status ${done?'updated':'pending'}" id="st-${v.rowIndex}">
-          ${v.status||'Pending'}
-        </span>
+        <span class="status ${done?'updated':'pending'}" id="st-${v.rowIndex}">${v.status||'Pending'}</span>
       </td>
       <td class="td-fixed">
-        ${done
-          ? `<button class="btn-edit" id="sb-${v.rowIndex}" onclick="enableEdit(${v.rowIndex},'desktop')">✏ Edit</button>`
-          : `<button class="btn-save" id="sb-${v.rowIndex}" onclick="save(${v.rowIndex})">Save</button>`
+        ${locked1h
+          ? `<span class="lock-badge">🔒</span>`
+          : done
+            ? `<span class="edit-hint">✏</span>`
+            : `<span class="edit-hint pending-hint">+ Add</span>`
         }
       </td>
     </tr>`;
@@ -1067,6 +1088,21 @@ function validatePrices(tv, ex, prefix) {
 // EDIT MODE TOGGLE
 // ══════════════════════════════════════════════════════════════
 function enableEdit(ri, mode) {
+  // 1-hour lock check
+  const v = vehicles.find(x => x.rowIndex === ri);
+  if (v && v.timestamp) {
+    const parts = v.timestamp.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
+    if (parts) {
+      const saved   = new Date(parts[3], parts[2]-1, parts[1], parts[4], parts[5]);
+      const diffMin = (Date.now() - saved.getTime()) / 60000;
+      if (diffMin > 60) {
+        const hrs = Math.floor(diffMin / 60);
+        const min = Math.round(diffMin % 60);
+        toast(`🔒 Editing locked — saved ${hrs > 0 ? hrs+'h ' : ''}${min}m ago (limit: 1 hour).`, 'err');
+        return;
+      }
+    }
+  }
   if (mode === 'desktop') {
     ['tv-','ex-'].forEach(p => {
       const el = document.getElementById(p+ri);
@@ -1213,15 +1249,45 @@ function openSheet(ri) {
   document.getElementById('sh-err').style.display = 'none';
   sheetPreview();
 
+  // ── 1-hour edit lock ──────────────────────────────────────
+  let editLocked = false;
+  let lockMsg = '';
+  if (done && v.timestamp) {
+    // timestamp format: "dd-MM-yyyy HH:mm"
+    const parts  = v.timestamp.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
+    if (parts) {
+      const saved  = new Date(parts[3], parts[2]-1, parts[1], parts[4], parts[5]);
+      const diffMin = (Date.now() - saved.getTime()) / 60000;
+      if (diffMin > 60) {
+        editLocked = true;
+        const hrs = Math.floor(diffMin / 60);
+        const min = Math.round(diffMin % 60);
+        lockMsg = `Saved ${hrs > 0 ? hrs+'h ' : ''}${min}m ago — editing locked after 1 hour.`;
+      }
+    }
+  }
+
   // buttons
-  document.getElementById('sh-btn-row').innerHTML = done
-    ? `<button class="btn-sheet-edit" onclick="sheetEnableEdit()">✏ Edit Prices</button>
-       <button class="btn-sheet-save" style="background:var(--green)" disabled>✓ Saved</button>`
-    : `<button class="btn-sheet-save" onclick="sheetSave()">Save Prices</button>`;
+  if (!done) {
+    document.getElementById('sh-btn-row').innerHTML =
+      `<button class="btn-sheet-save" onclick="sheetSave()">Save Prices</button>`;
+  } else if (editLocked) {
+    document.getElementById('sh-btn-row').innerHTML =
+      `<button class="btn-sheet-save" style="background:var(--green)" disabled>✓ Saved</button>`;
+    const errEl = document.getElementById('sh-err');
+    errEl.textContent = '🔒 ' + lockMsg;
+    errEl.style.display = 'block';
+    errEl.style.background = '#fff7ed';
+    errEl.style.borderColor = '#fed7aa';
+    errEl.style.color = 'var(--orange)';
+  } else {
+    document.getElementById('sh-btn-row').innerHTML =
+      `<button class="btn-sheet-edit" onclick="sheetEnableEdit()">✏ Edit Prices</button>
+       <button class="btn-sheet-save" style="background:var(--green)" disabled>✓ Saved</button>`;
+  }
 
   document.getElementById('sheet-overlay').classList.add('open');
   document.getElementById('bottom-sheet').classList.add('open');
-  // focus first empty input
   setTimeout(() => { if (!done) (tvEl.value ? exEl : tvEl).focus(); }, 350);
 }
 
