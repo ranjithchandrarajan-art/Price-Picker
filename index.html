@@ -1073,47 +1073,53 @@ function renderCards(list) {
 // ── TIMESTAMP HELPERS ────────────────────────────────────────
 const EDIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
 
-// ── LOCK HELPERS ──────────────────────────────────────────────
-// Returns ms elapsed since save. Returns null if cannot determine.
-function msElapsed(v) {
-  // Best source: epoch ms from server (only trust if > 0)
-  if (v.savedAtMs && Number(v.savedAtMs) > 0) {
-    return Math.max(0, Date.now() - Number(v.savedAtMs));
-  }
-  // Fallback: parse formatted timestamp string
-  const ts = v.timestamp;
-  if (!ts || String(ts).trim() === '') return null;
-  const p = ts.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-  if (!p) return null;
-  const d = new Date(
-    parseInt(p[3]), parseInt(p[2]) - 1, parseInt(p[1]),
-    parseInt(p[4]), parseInt(p[5]), parseInt(p[6] || '0')
-  );
-  if (isNaN(d.getTime())) return null;
-  return Math.max(0, Date.now() - d.getTime());
+// ── LOCK HELPERS — localStorage keyed by reg number ──────────
+// This is the ONLY reliable approach:
+// • Works after re-login (localStorage persists)
+// • Works on same device after page refresh
+// • Zero timestamp parsing — just Date.now() arithmetic
+// NOTE: Only records saved IN THIS BROWSER are lockable.
+//       Records saved on another device will always show editable
+//       (that device has its own localStorage entry).
+const LS_LOCK_KEY = 'aeval_locks';
+
+function getLocks() {
+  try { return JSON.parse(localStorage.getItem(LS_LOCK_KEY) || '{}'); }
+  catch(_) { return {}; }
+}
+
+function recordSaveTime(v) {
+  const locks = getLocks();
+  locks[v.registrationNumber] = Date.now();
+  localStorage.setItem(LS_LOCK_KEY, JSON.stringify(locks));
+}
+
+function msElapsedForReg(regNum) {
+  const locks = getLocks();
+  const t = locks[regNum];
+  if (!t) return null;
+  return Math.max(0, Date.now() - t);
 }
 
 function isEditLocked(v) {
-  // Not saved / status cleared → always editable
   if (!v || String(v.status).toLowerCase() !== 'updated') return false;
-  const elapsed = msElapsed(v);
-  // No time data at all (no savedAtMs, no timestamp) → treat as editable
-  if (elapsed === null) return false;
+  const elapsed = msElapsedForReg(v.registrationNumber);
+  if (elapsed === null) return false; // saved on another device → allow edit
   return elapsed > EDIT_WINDOW_MS;
 }
 
 function secsRemaining(v) {
-  const elapsed = msElapsed(v);
+  const elapsed = msElapsedForReg(v.registrationNumber);
   if (elapsed === null) return 0;
   return Math.max(0, Math.round((EDIT_WINDOW_MS - elapsed) / 1000));
 }
 
 function fmtElapsed(v) {
-  const elapsed = msElapsed(v);
-  if (elapsed === null) return 'unknown';
-  const diffMin = Math.floor(elapsed / 60000);
-  const diffSec = Math.round((elapsed % 60000) / 1000);
-  return diffMin > 0 ? `${diffMin}m ${diffSec}s` : `${diffSec}s`;
+  const elapsed = msElapsedForReg(v.registrationNumber);
+  if (elapsed === null) return '';
+  const m = Math.floor(elapsed / 60000);
+  const s = Math.round((elapsed % 60000) / 1000);
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
 function fmtCountdown(secs) {
@@ -1121,8 +1127,6 @@ function fmtCountdown(secs) {
   const s = secs % 60;
   return m + ':' + String(s).padStart(2, '0');
 }
-
-function recordSaveTime(rowIndex) {} // kept for compatibility
 
 
 // ── CARD HINT TICKER ─────────────────────────────────────────
@@ -1322,7 +1326,7 @@ function applySaveUI(ri, res, mode) {
   }
   const v = vehicles.find(x => x.rowIndex === ri);
   if (v) { v.status='Updated'; v.timestamp=res.timestamp; v.startPrice=res.startPrice; v.savedAtMs=res.savedAtMs; }
-  recordSaveTime(ri);
+  if (v) recordSaveTime(v);
   renderStats();
 }
 
@@ -1445,11 +1449,11 @@ async function sheetSave() {
     }
     // update local state
     const v = vehicles.find(x => x.rowIndex === ri);
-    recordSaveTime(ri);
     if (v) {
       v.status = 'Updated'; v.timestamp = res.timestamp;
       v.startPrice = res.startPrice; v.savedAtMs = res.savedAtMs;
       v.tvscPrice = tv; v.expectedPrice = ex;
+      recordSaveTime(v);
     }
     // update card in DOM
     const st = document.getElementById('mc-st-'+ri);
