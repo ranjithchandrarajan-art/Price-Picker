@@ -1209,10 +1209,10 @@ function validatePrices(tv, ex, prefix) {
 function enableEdit(ri, mode) {
   const v = vehicles.find(x => x.rowIndex === ri);
   if (v && v.timestamp && String(v.status).toLowerCase() === 'updated') {
-    const p = String(v.timestamp).match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+    const p = String(v.timestamp).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
     if (p) {
-      const saved = new Date(+p[3], +p[2]-1, +p[1], +p[4], +p[5], +p[6]);
-      if ((Date.now() - saved.getTime()) > 120000) {
+      const saved = new Date(+p[3], +p[2]-1, +p[1], +p[4], +p[5], +(p[6]||0));
+      if (!isNaN(saved.getTime()) && (Date.now() - saved.getTime()) > 120000) {
         toast('🔒 Editing locked after 2 minutes.', 'err');
         return;
       }
@@ -1350,7 +1350,8 @@ function openSheet(ri) {
   const done = String(v.status).toLowerCase() === 'updated';
 
   document.getElementById('sh-reg').textContent   = v.registrationNumber;
-  document.getElementById('sh-model').textContent = v.makeModel + (v.yearOfMfg ? ' · ' + v.yearOfMfg : '');
+  document.getElementById('sh-model').textContent = v.makeModel + (v.yearOfMfg ? ' · ' + v.yearOfMfg : '')
+    + (v.timestamp ? '  |  ts: ' + v.timestamp : '');
 
   const tvEl = document.getElementById('sh-tv');
   const exEl = document.getElementById('sh-ex');
@@ -1363,13 +1364,16 @@ function openSheet(ri) {
 
   document.getElementById('sh-err').style.display = 'none';
 
-  // ── Simple 2-min lock: parse timestamp right here ────────────
+  // ── 2-min lock: parse timestamp ───────────────────────────────
   let editLocked = false;
   if (done && v.timestamp) {
-    const p = String(v.timestamp).match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+    // handles: "16/03/2026 17:08:11" OR "16-03-2026 17:08" (any separator, optional seconds)
+    const p = String(v.timestamp).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
     if (p) {
-      const saved = new Date(+p[3], +p[2]-1, +p[1], +p[4], +p[5], +p[6]);
-      editLocked = (Date.now() - saved.getTime()) > 120000;
+      const saved = new Date(+p[3], +p[2]-1, +p[1], +p[4], +p[5], +(p[6]||0));
+      if (!isNaN(saved.getTime())) {
+        editLocked = (Date.now() - saved.getTime()) > 120000;
+      }
     }
   }
 
