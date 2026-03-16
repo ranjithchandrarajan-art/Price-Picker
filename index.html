@@ -431,26 +431,38 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
    RESPONSIVE
 ════════════════════════════════════════════════════════════ */
 @media(max-width:768px){
-  .table-area{padding:12px 14px}
-  .header{padding:0 12px;height:auto;min-height:58px;padding-top:10px;padding-bottom:10px}
-  .login-card{padding:36px 24px 32px}
-  .table-wrap,.pivot-wrap{display:none}
-  .m-cards{display:flex}
-  .stats-bar{top:0;position:relative}
-  .stats-bar .stat-num{font-size:26px}
-  .stats-bar .stat-cell{padding:14px 12px}
-  .toolbar{top:0;position:relative}
-  .search-wrap{max-width:none;flex:1}
+  .table-area{padding:10px 12px}
+  .header{
+    padding:0 12px;height:auto;min-height:52px;
+    padding-top:8px;padding-bottom:8px;
+    align-items:flex-start;
+  }
+  .hdr-left{align-items:flex-start;gap:10px}
+  .hdr-logo{width:34px;height:34px;margin-top:2px}
   .hdr-title{font-size:13px}
-  .hdr-sub{font-size:11px;max-width:none;color:rgba(255,255,255,.8);line-height:1.4}
+  .hdr-sub{font-size:11px;max-width:none;color:rgba(255,255,255,.85);line-height:1.4;word-break:break-word}
+  .hdr-right{flex-shrink:0;margin-top:2px}
+  .btn-signout{padding:5px 10px;font-size:12px}
+  .badge-role{display:none}
+
+  /* Stats bar — compact */
+  .stats-bar{position:sticky;z-index:98;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .stats-bar .stat-cell{padding:10px 8px}
+  .stats-bar .stat-num{font-size:22px;letter-spacing:-.5px}
+  .stats-bar .stat-lbl{font-size:10px;letter-spacing:.5px;margin-top:2px}
+
+  /* Toolbar — compact, sticky */
+  .toolbar{position:sticky;z-index:97;padding:8px 12px;gap:8px}
+  .search-wrap{max-width:none;flex:1}
   .refresh-chip span{display:none}
   .refresh-chip{margin-left:0}
-  .btn-signout{padding:6px 10px;font-size:12px}
-  .hdr-logo{width:34px;height:34px}
+
+  .table-wrap,.pivot-wrap{display:none}
+  .m-cards{display:flex}
 }
 @media(max-width:480px){
   .stats-bar{grid-template-columns:1fr 1fr 1fr}
-  .stats-bar .stat-num{font-size:22px}
+  .stats-bar .stat-num{font-size:20px}
   .login-card h1{font-size:20px}
 }
 </style>
@@ -647,6 +659,8 @@ async function login() {
     document.getElementById('login-page').style.display = 'none';
     document.getElementById('main-page').style.display = 'flex';
     document.getElementById('main-page').style.flexDirection = 'column';
+    // recalc sticky offsets once header is rendered
+    requestAnimationFrame(() => requestAnimationFrame(recalcSticky));
     const rb = document.getElementById('h-role');
     rb.textContent = user.role;
     rb.className = 'badge-role ' + user.role.toLowerCase();
@@ -731,6 +745,7 @@ function renderStats() {
   // also update header sub
   document.getElementById('hdr-sub').textContent =
     `Welcome, ${user.name} · ${updated}/${total} updated`;
+  requestAnimationFrame(recalcSticky);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1076,8 +1091,21 @@ function switchTab(el) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// AUTO-REFRESH  (30s silent sync — never wipes unsaved inputs)
+// STICKY OFFSET — recalculate after login / resize
 // ══════════════════════════════════════════════════════════════
+function recalcSticky() {
+  const header   = document.querySelector('.header');
+  const statsBar = document.querySelector('.stats-bar');
+  const toolbar  = document.querySelector('.toolbar');
+  if (!header || !statsBar || !toolbar) return;
+  const hh = header.getBoundingClientRect().height;
+  const sh = statsBar.getBoundingClientRect().height;
+  statsBar.style.top = hh + 'px';
+  toolbar.style.top  = (hh + sh) + 'px';
+}
+window.addEventListener('resize', recalcSticky);
+
+
 let _refreshTimer = null;
 let _countdownTimer = null;
 let _countdown = 30;
