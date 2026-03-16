@@ -1208,15 +1208,10 @@ function validatePrices(tv, ex, prefix) {
 // ══════════════════════════════════════════════════════════════
 function enableEdit(ri, mode) {
   const v = vehicles.find(x => x.rowIndex === ri);
-  if (v && v.timestamp && String(v.status).toLowerCase() === 'updated') {
-    const p = String(v.timestamp).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-    if (p) {
-      const saved = new Date(+p[3], +p[2]-1, +p[1], +p[4], +p[5], +(p[6]||0));
-      if (!isNaN(saved.getTime()) && (Date.now() - saved.getTime()) > 120000) {
-        toast('🔒 Editing locked after 2 minutes.', 'err');
-        return;
-      }
-    }
+  if (v && String(v.status).toLowerCase() === 'updated') {
+    const ms = Number(v.timestampMs || 0);
+    const locked = ms > 0 ? (Date.now() - ms) > 120000 : true;
+    if (locked) { toast('🔒 Editing locked after 2 minutes.', 'err'); return; }
   }
   if (mode === 'desktop') {
     ['tv-','ex-'].forEach(p => {
@@ -1350,8 +1345,7 @@ function openSheet(ri) {
   const done = String(v.status).toLowerCase() === 'updated';
 
   document.getElementById('sh-reg').textContent   = v.registrationNumber;
-  document.getElementById('sh-model').textContent = v.makeModel + (v.yearOfMfg ? ' · ' + v.yearOfMfg : '')
-    + (v.timestamp ? '  |  ts: ' + v.timestamp : '');
+  document.getElementById('sh-model').textContent = v.makeModel + (v.yearOfMfg ? ' · ' + v.yearOfMfg : '');
 
   const tvEl = document.getElementById('sh-tv');
   const exEl = document.getElementById('sh-ex');
@@ -1364,16 +1358,15 @@ function openSheet(ri) {
 
   document.getElementById('sh-err').style.display = 'none';
 
-  // ── 2-min lock: parse timestamp ───────────────────────────────
+  // ── 2-min lock using epoch ms from server ────────────────────
   let editLocked = false;
-  if (done && v.timestamp) {
-    // handles: "16/03/2026 17:08:11" OR "16-03-2026 17:08" (any separator, optional seconds)
-    const p = String(v.timestamp).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-    if (p) {
-      const saved = new Date(+p[3], +p[2]-1, +p[1], +p[4], +p[5], +(p[6]||0));
-      if (!isNaN(saved.getTime())) {
-        editLocked = (Date.now() - saved.getTime()) > 120000;
-      }
+  if (done) {
+    const ms = Number(v.timestampMs || 0);
+    if (ms > 0) {
+      editLocked = (Date.now() - ms) > 120000;
+    } else {
+      // timestampMs missing (Code.gs not redeployed yet) → lock for safety
+      editLocked = true;
     }
   }
 
