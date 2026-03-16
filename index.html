@@ -1,153 +1,1228 @@
-// ============================================================
-// AUCTION VEHICLE PRICE EVALUATOR — Google Apps Script REST API
-// ============================================================
-// SETUP: Replace with your actual Google Sheet ID
-const SHEET_ID = "YOUR_GOOGLE_SHEET_ID_HERE";
-const DATA_SHEET = "DATA";
-const USERS_SHEET = "USERS";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TVS Certified — Auction Vehicles Price Picker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET ───────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Brand palette — exact from Dealer Stock Status */
+  --navy:       #1e2d78;   /* primary navy — header, buttons       */
+  --navy-dark:  #172268;   /* deeper navy — hover states           */
+  --navy-light: #2d3e9e;   /* lighter navy — accents               */
+  --blue-grad1: #1e3a8a;   /* login bg gradient start              */
+  --blue-grad2: #2d3aaa;   /* login bg gradient end                */
 
-// ── Column indices (1-based) for DATA sheet ──────────────────
-const COL = {
-  INDEX: 1, EVALUATION_DATE: 2, REGISTRATION_NUMBER: 3,
-  STAGE: 4, CUSTOMER_NAME: 5, EVALUATOR_NAME: 6,
-  MAKE_MODEL: 7, COLOR_ID: 8, FUEL_TYPE: 9, TRANSMISSION: 10,
-  YEAR_OF_MFG: 11, INSURANCE_END_DATE: 12, RC_REGN_DATE: 13,
-  VEHICLE_OWNER_NUMBER: 14, SPEEDOMETER: 15, TIMESTAMP: 16,
-  STATUS: 17, TVSC_PRICE: 18, EXPECTED_PRICE: 19, START_PRICE: 20
-};
-const USER_COL = { MOBILE: 1, NAME: 2, ROLE: 3 };
+  --green:      #16a34a;   /* updated / positive                   */
+  --green-bg:   #f0fdf4;   /* card tint bg                         */
+  --green-bdr:  #bbf7d0;   /* card border                          */
+  --orange:     #ea580c;   /* pending / warning                    */
+  --orange-bg:  #fff7ed;
+  --red:        #dc2626;
+  --blue-stat:  #1d4ed8;   /* total stat number                    */
 
-// ── JSON response helper ──────────────────────────────────────
-function jsonOut(data) {
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+  --bg:         #f1f5f9;   /* page background                      */
+  --white:      #ffffff;
+  --surface:    #ffffff;
+  --border:     #e2e8f0;
+  --border2:    #cbd5e1;
+  --text:       #0f172a;
+  --text2:      #334155;
+  --muted:      #64748b;
+  --muted2:     #94a3b8;
+
+  --radius:     12px;
+  --radius-lg:  16px;
+  --font:       'Inter', sans-serif;
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+  --shadow:     0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg:  0 10px 40px rgba(0,0,0,.15);
 }
 
-// ============================================================
-// GET  →  ?action=login&mobile=XXXXXXXXXX
-//      →  ?action=vehicles&name=NAME&role=ROLE
-//      →  ?action=pivot
-// ============================================================
-function doGet(e) {
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;background:none;font-family:var(--font)}
+input,select{font-family:var(--font)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+#app{min-height:100vh;display:flex;flex-direction:column}
+
+/* ════════════════════════════════════════════════════════════
+   LOGIN PAGE
+════════════════════════════════════════════════════════════ */
+#login-page{
+  flex:1;display:flex;align-items:flex-start;justify-content:center;padding:48px 24px 24px;
+  background: linear-gradient(135deg, var(--blue-grad1) 0%, var(--blue-grad2) 100%);
+  min-height:100vh;
+}
+.login-card{
+  background:var(--white);
+  border-radius:20px;
+  padding:48px 44px 44px;
+  width:100%;max-width:400px;
+  text-align:center;
+  box-shadow:var(--shadow-lg);
+}
+.login-logo{
+  width:90px;height:90px;
+  border-radius:50%;
+  object-fit:cover;
+  margin:0 auto 22px;
+  display:block;
+  border:3px solid var(--border);
+  box-shadow:var(--shadow-sm);
+}
+.login-logo-fallback{
+  width:90px;height:90px;border-radius:50%;
+  background:var(--navy);display:flex;align-items:center;justify-content:center;
+  margin:0 auto 22px;font-size:34px;box-shadow:var(--shadow-sm);
+}
+.login-card h1{font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:-.3px}
+.login-card .sub{color:var(--muted);font-size:14px;margin-bottom:32px;line-height:1.6}
+.field-label{display:block;font-size:11px;font-weight:600;color:var(--muted);
+  margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;text-align:left}
+.field-input{
+  width:100%;padding:13px 16px;
+  background:var(--white);border:1.5px solid var(--border2);border-radius:var(--radius);
+  color:var(--text);font-size:15px;font-weight:500;transition:.2s;margin-bottom:16px;
+}
+.field-input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(30,45,120,.1)}
+.field-input::placeholder{color:var(--muted2)}
+.btn-signin{
+  width:100%;padding:14px;
+  background:var(--navy);color:var(--white);
+  font-weight:600;font-size:15px;border-radius:var(--radius);
+  letter-spacing:.2px;transition:.2s;
+}
+.btn-signin:hover:not(:disabled){background:var(--navy-dark);transform:translateY(-1px);box-shadow:var(--shadow)}
+.btn-signin:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.err-box{
+  color:var(--red);font-size:13px;margin-top:12px;
+  padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;
+  border-radius:8px;display:none;text-align:left;
+}
+
+/* ════════════════════════════════════════════════════════════
+   HEADER
+════════════════════════════════════════════════════════════ */
+#main-page{flex:1;display:none;flex-direction:column}
+.header{
+  background:var(--navy);
+  padding:0 24px;height:62px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+.hdr-left{display:flex;align-items:center;gap:12px}
+.hdr-logo{
+  width:40px;height:40px;border-radius:50%;object-fit:cover;
+  border:2px solid rgba(255,255,255,.25);flex-shrink:0;
+}
+.hdr-logo-fallback{
+  width:40px;height:40px;border-radius:50%;
+  background:rgba(255,255,255,.15);
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+}
+.hdr-title{font-size:16px;font-weight:700;color:var(--white);letter-spacing:-.2px}
+.hdr-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:1px;line-height:1.4}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.badge-role{
+  font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.3px;
+}
+.badge-role.evaluator{background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2)}
+.badge-role.admin{background:rgba(16,163,74,.25);color:#6ee7b7;border:1px solid rgba(16,163,74,.35)}
+.btn-signout{
+  color:rgba(255,255,255,.8);font-size:13px;font-weight:500;
+  padding:7px 16px;border:1.5px solid rgba(255,255,255,.25);
+  border-radius:8px;transition:.2s;background:transparent;
+}
+.btn-signout:hover{color:var(--white);border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.08)}
+
+/* ════════════════════════════════════════════════════════════
+   STATS BAR  (white row with 3 columns, dividers)
+════════════════════════════════════════════════════════════ */
+.stats-bar{
+  background:var(--white);
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:62px;z-index:98;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
+}
+.stat-cell{
+  padding:18px 24px;text-align:center;
+  border-right:1px solid var(--border);
+}
+.stat-cell:last-child{border-right:none}
+.stat-num{font-size:32px;font-weight:800;line-height:1;letter-spacing:-1px}
+.stat-num.blue{color:var(--blue-stat)}
+.stat-num.orange{color:var(--orange)}
+.stat-num.green{color:var(--green)}
+.stat-lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.8px;margin-top:4px}
+
+/* ── MAIN CONTENT ───────────────────────────────────────────── */
+.main-inner{padding:0;width:100%}
+.table-area{padding:16px 20px}
+
+/* ── REFRESH INDICATOR ─────────────────────────────────────── */
+.refresh-chip{
+  display:flex;align-items:center;gap:6px;
+  font-size:11.5px;font-weight:500;color:var(--muted);
+  margin-left:auto;white-space:nowrap;
+}
+.refresh-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--green);flex-shrink:0;
+  animation:pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.4;transform:scale(.7)}
+}
+.refresh-dot.syncing{background:var(--orange);animation:spin-dot .6s linear infinite}
+@keyframes spin-dot{to{transform:rotate(360deg)}}
+.refresh-countdown{font-variant-numeric:tabular-nums}
+
+/* ── TABS ──────────────────────────────────────────────────── */
+.tabs{
+  display:flex;gap:2px;
+  background:var(--border);border-radius:10px;
+  padding:3px;margin:14px 20px;width:fit-content;
+}
+.tab{
+  padding:8px 22px;border-radius:8px;font-size:13px;font-weight:600;
+  color:var(--muted);transition:.18s;cursor:pointer;user-select:none;
+}
+.tab.active{background:var(--navy);color:var(--white);box-shadow:var(--shadow-sm)}
+.tab:hover:not(.active){color:var(--text)}
+
+/* ── SECTION LABEL ─────────────────────────────────────────── */
+.section-label{
+  font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.8px;margin-bottom:12px;
+}
+
+/* ── TOOLBAR ────────────────────────────────────────────────── */
+.toolbar{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:0;border-left:none;border-right:none;
+  padding:10px 20px;display:flex;gap:10px;margin-bottom:0;flex-wrap:wrap;align-items:center;
+  position:sticky;top:134px;z-index:97;
+  box-shadow:0 3px 8px rgba(0,0,0,.07);
+}
+.search-wrap{flex:1;min-width:200px;max-width:380px;position:relative}
+.search-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search-wrap input{
+  width:100%;padding:9px 14px 9px 38px;
+  background:var(--bg);border:1.5px solid var(--border);border-radius:8px;
+  color:var(--text);font-size:13.5px;transition:.2s;
+}
+.search-wrap input:focus{outline:none;border-color:var(--navy);background:var(--white)}
+.search-wrap input::placeholder{color:var(--muted2)}
+.flt{
+  padding:9px 13px;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:13.5px;cursor:pointer;transition:.2s;
+}
+.flt:focus{outline:none;border-color:var(--navy)}
+.count-chip{
+  margin-left:auto;font-size:12px;font-weight:500;color:var(--muted);
+}
+
+/* ── TABLE ──────────────────────────────────────────────────── */
+.table-wrap{
+  background:var(--white);overflow-x:auto;
+  border-radius:var(--radius-lg);border:1px solid var(--border);
+  box-shadow:var(--shadow-sm);
+}
+table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+thead{background:#f8fafc}
+th{
+  padding:11px 10px;text-align:left;
+  font-size:10px;font-weight:700;color:var(--navy);
+  text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;
+  border-bottom:2px solid var(--border);
+}
+td{
+  padding:10px 10px;border-top:1px solid var(--border);
+  vertical-align:top;color:var(--text2);
+  /* default: allow wrap, clip overflow */
+  word-break:break-word;overflow-wrap:break-word;
+}
+tr:hover td{background:#f8fafc}
+/* alternating row tint */
+tbody tr:nth-child(even) td{background:#fafbfd}
+tbody tr:nth-child(even):hover td{background:#f8fafc}
+
+/* ── COLUMN WIDTHS ─────────────────────────────────────────── */
+table colgroup col:nth-child(1) {width:38px}   /* #          — fixed  */
+table colgroup col:nth-child(2) {width:94px}   /* Reg No.    — fixed  */
+table colgroup col:nth-child(3) {width:15%}    /* Make/Model — wrap   */
+table colgroup col:nth-child(4) {width:46px}   /* Year       — fixed  */
+table colgroup col:nth-child(5) {width:80px}   /* Fuel/Trans — wrap   */
+table colgroup col:nth-child(6) {width:13%}    /* Customer   — wrap   */
+table colgroup col:nth-child(7) {width:12%}    /* Evaluator  — wrap   */
+table colgroup col:nth-child(8) {width:80px}   /* Odometer   — fixed  */
+table colgroup col:nth-child(9) {width:104px}  /* TVSC       — fixed  */
+table colgroup col:nth-child(10){width:104px}  /* Expected   — fixed  */
+table colgroup col:nth-child(11){width:80px}   /* Status     — fixed  */
+table colgroup col:nth-child(12){width:64px}   /* Action     — fixed  */
+
+/* ── FIXED (no-wrap) columns helper ──────────────────────────  */
+td.td-fixed{white-space:nowrap;word-break:normal;overflow-wrap:normal}
+td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--muted);font-size:12px}
+
+/* ── CELL CONTENT STYLES ───────────────────────────────────── */
+.reg{
+  font-weight:700;font-size:12.5px;color:var(--navy);
+  white-space:nowrap;display:inline-block;
+}
+/* Make / Model cell */
+.model-name{font-weight:600;font-size:12.5px;color:var(--text);line-height:1.35}
+.color-tag{
+  display:inline-block;margin-top:3px;
+  font-size:10px;color:var(--muted);
+  background:var(--bg);border:1px solid var(--border);
+  padding:1px 6px;border-radius:4px;
+}
+/* Customer cell */
+.cust-name{
+  font-size:12.5px;font-weight:600;color:var(--blue-stat);
+  line-height:1.35;
+}
+/* Evaluator cell */
+.eval-name{font-size:12.5px;font-weight:500;color:var(--text2);line-height:1.35}
+.sub-text{font-size:10.5px;color:var(--muted);margin-top:1px}
+.yr{
+  background:var(--bg);color:var(--muted);font-size:10px;
+  padding:2px 6px;border-radius:5px;border:1px solid var(--border);
+  white-space:nowrap;display:inline-block;
+}
+
+/* ── STATUS PILLS ──────────────────────────────────────────── */
+.status{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:600;padding:4px 10px;
+  border-radius:20px;letter-spacing:.2px;white-space:nowrap;
+}
+.status::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.status.updated{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.status.pending{background:#fff7ed;color:var(--orange);border:1px solid #fed7aa}
+
+/* ── PRICE INPUTS ──────────────────────────────────────────── */
+.pi{
+  width:84px;padding:5px 7px;
+  background:var(--bg);border:1.5px solid var(--border);border-radius:6px;
+  color:var(--text);font-size:12px;transition:.2s;
+}
+.pi:focus{outline:none;border-color:var(--navy);background:var(--white);box-shadow:0 0 0 3px rgba(30,45,120,.08)}
+.pi.filled{border-color:#bbf7d0;background:#f0fdf4}
+.pi.editing{border-color:var(--navy) !important;background:var(--white) !important}
+.pi.input-err{border-color:var(--red) !important;background:#fef2f2 !important;animation:shake .3s ease;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.price-cell{display:flex;align-items:center;gap:5px}
+.rupee{color:var(--muted);font-size:12px}
+.start-val{font-weight:700;color:var(--green);font-size:13px}
+.start-val.empty{color:var(--muted);font-weight:400}
+
+/* ── SAVE / EDIT BUTTONS ────────────────────────────────────── */
+.btn-save{
+  padding:5px 11px;background:var(--navy);color:var(--white);
+  font-weight:600;font-size:11.5px;border-radius:7px;
+  white-space:nowrap;transition:.2s;letter-spacing:.1px;
+}
+.btn-save:hover:not(:disabled){background:var(--navy-dark)}
+.btn-save:disabled{opacity:.4;cursor:not-allowed}
+.btn-save.done{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.btn-edit{
+  padding:5px 11px;background:transparent;color:var(--navy);
+  font-weight:600;font-size:11.5px;border-radius:7px;
+  border:1.5px solid var(--navy);white-space:nowrap;transition:.2s;
+}
+.btn-edit:hover{background:var(--navy);color:var(--white)}
+
+/* ── MOBILE INDEX CIRCLE ────────────────────────────────────── */
+.idx-circle{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;margin-top:6px;
+  flex-shrink:0;
+}
+.idx-circle.updated{background:#dcfce7;color:#15803d;border:1.5px solid #bbf7d0}
+.idx-circle.pending{background:#fff7ed;color:var(--orange);border:1.5px solid #fed7aa}
+
+/* ════════════════════════════════════════════════════════════
+   MOBILE CARDS
+════════════════════════════════════════════════════════════ */
+.m-cards{display:none;flex-direction:column;gap:12px}
+.m-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--radius-lg);overflow:hidden;
+  box-shadow:var(--shadow-sm);
+}
+.m-card.is-updated{border-left:4px solid var(--green);background:var(--green-bg)}
+.m-card.is-pending{border-left:4px solid var(--orange)}
+.m-card-body{padding:16px}
+.m-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.m-card-reg{font-weight:800;font-size:16px;color:var(--navy);letter-spacing:-.3px}
+.m-card-model{font-weight:600;font-size:14px;color:var(--text);margin-top:2px}
+.m-card-meta{font-size:12px;color:var(--muted);margin-top:3px}
+.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.m-field label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;
+  letter-spacing:.5px;display:block;margin-bottom:4px}
+.m-field span{font-size:13px;font-weight:500;color:var(--text2)}
+.m-prices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.m-prices .pi{width:100%}
+.m-prices .m-field label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
+.m-footer{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border)}
+.m-start{font-size:13px;font-weight:700;color:var(--green)}
+.m-ts{font-size:11px;color:var(--muted);margin-top:8px}
+
+/* ════════════════════════════════════════════════════════════
+   PIVOT TABLE
+════════════════════════════════════════════════════════════ */
+.pivot-wrap{
+  background:var(--white);overflow-x:auto;
+  border-radius:var(--radius-lg);border:1px solid var(--border);
+  box-shadow:var(--shadow-sm);
+}
+.ptable{width:100%;border-collapse:collapse;font-size:14px}
+.ptable thead{background:#f8fafc}
+.ptable th{
+  padding:12px 18px;text-align:left;
+  font-size:10.5px;font-weight:700;color:var(--navy);
+  text-transform:uppercase;letter-spacing:.7px;
+  border-bottom:2px solid var(--border);
+}
+.ptable td{padding:14px 18px;border-top:1px solid var(--border);color:var(--text2)}
+.ptable tr:hover td{background:#f8fafc}
+.p-name{font-weight:600;font-size:14px;color:var(--text)}
+.pbar{height:6px;background:var(--border);border-radius:4px;overflow:hidden;width:160px;margin-top:6px}
+.pbar-fill{height:100%;border-radius:4px;transition:.6s;background:linear-gradient(90deg,var(--navy-light),var(--green))}
+.pct{font-weight:700;font-size:14px}
+
+/* ── LOADER / EMPTY ─────────────────────────────────────────── */
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:64px;color:var(--muted);gap:14px}
+.spin{
+  width:32px;height:32px;border:3px solid var(--border);
+  border-top-color:var(--navy);border-radius:50%;
+  animation:rot .7s linear infinite;
+}
+@keyframes rot{to{transform:rotate(360deg)}}
+.empty{padding:60px;text-align:center;color:var(--muted)}
+.empty-ico{font-size:36px;margin-bottom:10px;opacity:.5}
+
+/* ── TOAST ──────────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;
+  opacity:0;transform:translateY(60px);transition:.3s;pointer-events:none;
+  box-shadow:var(--shadow);
+}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.ok{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+#toast.err{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  .table-area{padding:10px 12px}
+  .header{
+    padding:0 12px;height:auto;min-height:52px;
+    padding-top:8px;padding-bottom:8px;
+    align-items:flex-start;
+  }
+  .hdr-left{align-items:flex-start;gap:10px}
+  .hdr-logo{width:34px;height:34px;margin-top:2px}
+  .hdr-title{font-size:13px}
+  .hdr-sub{font-size:11px;max-width:none;color:rgba(255,255,255,.85);line-height:1.4;word-break:break-word}
+  .hdr-right{flex-shrink:0;margin-top:2px}
+  .btn-signout{padding:5px 10px;font-size:12px}
+  .badge-role{display:none}
+
+  /* Stats bar — compact */
+  .stats-bar{position:sticky;z-index:98;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .stats-bar .stat-cell{padding:10px 8px}
+  .stats-bar .stat-num{font-size:22px;letter-spacing:-.5px}
+  .stats-bar .stat-lbl{font-size:10px;letter-spacing:.5px;margin-top:2px}
+
+  /* Toolbar — compact, sticky */
+  .toolbar{position:sticky;z-index:97;padding:8px 12px;gap:8px}
+  .search-wrap{max-width:none;flex:1}
+  .refresh-chip span{display:none}
+  .refresh-chip{margin-left:0}
+
+  .table-wrap,.pivot-wrap{display:none}
+  .m-cards{display:flex}
+}
+@media(max-width:480px){
+  .stats-bar{grid-template-columns:1fr 1fr 1fr}
+  .stats-bar .stat-num{font-size:20px}
+  .login-card h1{font-size:20px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ LOGIN ═════════════════════════════════════════════════ -->
+  <div id="login-page" style="display:flex;flex:1">
+    <div class="login-card">
+      <img class="login-logo" id="login-logo-img"
+           src="https://drive.google.com/thumbnail?id=1FREFFtAgLbSXJfKGIR_f1OxGt5qR6vMX&sz=w200"
+           alt="TVS Certified"
+           onerror="this.style.display='none';document.getElementById('login-logo-fallback').style.display='flex'"/>
+      <div class="login-logo-fallback" id="login-logo-fallback" style="display:none">🚗</div>
+      <h1>Auction Vehicles Price Picker</h1>
+      <p class="sub">Enter your registered mobile number to view<br/>and update your assigned vehicles.</p>
+      <label class="field-label">Mobile Number</label>
+      <input class="field-input" type="tel" id="mob" maxlength="10"
+             placeholder="Enter 10-digit mobile number"
+             onkeydown="if(event.key==='Enter')login()"/>
+      <button class="btn-signin" id="login-btn" onclick="login()">Sign In</button>
+      <div class="err-box" id="login-err"></div>
+    </div>
+  </div>
+
+  <!-- ══ MAIN APP ══════════════════════════════════════════════ -->
+  <div id="main-page">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="hdr-left">
+        <img class="hdr-logo" id="hdr-logo-img"
+             src="https://drive.google.com/thumbnail?id=1FREFFtAgLbSXJfKGIR_f1OxGt5qR6vMX&sz=w200"
+             alt="TVS Certified"
+             onerror="this.style.display='none';document.getElementById('hdr-logo-fallback').style.display='flex'"/>
+        <div class="hdr-logo-fallback" id="hdr-logo-fallback" style="display:none">🚗</div>
+        <div>
+          <div class="hdr-title">Auction Vehicles Price Picker</div>
+          <div class="hdr-sub" id="hdr-sub">Welcome</div>
+        </div>
+      </div>
+      <div class="hdr-right">
+        <span class="badge-role" id="h-role"></span>
+        <button class="btn-signout" onclick="logout()">Sign out</button>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-cell">
+        <div class="stat-num blue" id="stat-total">—</div>
+        <div class="stat-lbl">Total</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num orange" id="stat-pending">—</div>
+        <div class="stat-lbl">Pending</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num green" id="stat-updated">—</div>
+        <div class="stat-lbl">Updated</div>
+      </div>
+    </div>
+
+    <!-- Page content -->
+    <div class="main-inner">
+
+      <!-- Admin tabs -->
+      <div class="tabs" id="admin-tabs" style="display:none">
+        <div class="tab active" data-tab="vehicles" onclick="switchTab(this)">🚘 Vehicles</div>
+        <div class="tab" data-tab="pivot" onclick="switchTab(this)">📊 Evaluator Summary</div>
+      </div>
+
+      <!-- Vehicles tab -->
+      <div id="tab-vehicles">
+
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" id="q" placeholder="Search reg no., model, customer…" oninput="filter()"/>
+          </div>
+          <select class="flt" id="st-flt" onchange="filter()">
+            <option value="">All Statuses</option>
+            <option value="Updated">✅ Updated</option>
+            <option value="Pending">⏳ Pending</option>
+          </select>
+          <select class="flt" id="ev-flt" onchange="filter()" style="display:none">
+            <option value="">All Evaluators</option>
+          </select>
+          <span class="count-chip" id="count-chip"></span>
+          <div class="refresh-chip">
+            <div class="refresh-dot" id="refresh-dot"></div>
+            <span>Auto-refresh in <span class="refresh-countdown" id="refresh-countdown">30</span>s</span>
+          </div>
+        </div>
+
+        <div class="table-area">
+
+        <!-- Desktop table -->
+        <div class="table-wrap">
+          <table>
+            <colgroup>
+              <col/><col/><col/><col/><col/><col/>
+              <col/><col/><col/><col/><col/><col/>
+            </colgroup>
+            <thead><tr>
+              <th>#</th>
+              <th>Reg No.</th>
+              <th>Make / Model</th>
+              <th>Year</th>
+              <th>Fuel / Trans</th>
+              <th>Customer</th>
+              <th>Evaluator</th>
+              <th>Odometer</th>
+              <th>TVSC Price ₹</th>
+              <th>Expected Price ₹</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Mobile cards -->
+        <div class="m-cards" id="m-cards"></div>
+
+        </div><!-- /table-area -->
+      </div>
+
+      <!-- Pivot tab -->
+      <div id="tab-pivot" style="display:none">
+        <div class="section-label">Update Progress — By Evaluator</div>
+        <div class="pivot-wrap">
+          <table class="ptable">
+            <thead><tr>
+              <th>Evaluator</th>
+              <th>Total</th>
+              <th>✅ Updated</th>
+              <th>⏳ Pending</th>
+              <th>Progress</th>
+              <th>Completion %</th>
+            </tr></thead>
+            <tbody id="pivot-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /main-inner -->
+  </div><!-- /main-page -->
+
+</div><!-- /app -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbzbDIbB9kXy3YM53dpfq0Y2QizO6C_4nqpjx9vY4a4ph-Cg6Y_5-lvEzV4GaSa3DjT_hg/exec';
+let user = null;
+let vehicles = [];
+let pivotData = {};
+
+// ══════════════════════════════════════════════════════════════
+// API
+// ══════════════════════════════════════════════════════════════
+async function apiGet(params) {
+  const r = await fetch(API_URL + '?' + new URLSearchParams(params), { redirect:'follow' });
+  return r.json();
+}
+async function apiPost(body) {
+  const r = await fetch(API_URL, {
+    method:'POST', redirect:'follow',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(body)
+  });
+  return r.json();
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════════════
+async function login() {
+  const mob = document.getElementById('mob').value.trim();
+  if (!mob || mob.length < 10) { showErr('Enter a valid 10-digit mobile number.'); return; }
+  setBtnLoading(true);
   try {
-    const p = e.parameter;
-    if (p.action === "login")    return jsonOut(loginByMobile(p.mobile));
-    if (p.action === "vehicles") return jsonOut(getVehicles(p.name, p.role));
-    if (p.action === "pivot")    return jsonOut(getAdminPivot());
-    return jsonOut({ success: false, message: "Unknown action." });
-  } catch (err) {
-    return jsonOut({ success: false, message: err.message });
+    const res = await apiGet({ action:'login', mobile:mob });
+    setBtnLoading(false);
+    if (!res.success) { showErr(res.message); return; }
+    user = res.user;
+    document.getElementById('login-err').style.display = 'none';
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('main-page').style.display = 'flex';
+    document.getElementById('main-page').style.flexDirection = 'column';
+    // recalc sticky offsets once header is rendered
+    requestAnimationFrame(() => requestAnimationFrame(recalcSticky));
+    const rb = document.getElementById('h-role');
+    rb.textContent = user.role;
+    rb.className = 'badge-role ' + user.role.toLowerCase();
+    if (user.role === 'Admin') {
+      document.getElementById('admin-tabs').style.display = 'flex';
+      document.getElementById('ev-flt').style.display = 'block';
+    }
+    loadVehicles();
+  } catch(e) {
+    setBtnLoading(false);
+    showErr('Connection failed. Please check your network and try again.');
   }
 }
 
-// ============================================================
-// POST  →  { action:"save", rowIndex, tvscPrice, expectedPrice }
-// ============================================================
-function doPost(e) {
+function setBtnLoading(on) {
+  const b = document.getElementById('login-btn');
+  b.disabled = on; b.textContent = on ? 'Signing in…' : 'Sign In';
+}
+function showErr(msg) {
+  const el = document.getElementById('login-err');
+  el.textContent = msg; el.style.display = 'block';
+}
+function logout() {
+  user = null; vehicles = [];
+  stopAutoRefresh();
+  document.getElementById('main-page').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('mob').value = '';
+  document.getElementById('tab-vehicles').style.display = 'block';
+  document.getElementById('tab-pivot').style.display = 'none';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const first = document.querySelector('.tab');
+  if (first) first.classList.add('active');
+  document.getElementById('hdr-sub').textContent = 'Welcome';
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOAD VEHICLES
+// ══════════════════════════════════════════════════════════════
+async function loadVehicles() {
+  showLoading();
   try {
-    const b = JSON.parse(e.postData.contents);
-    if (b.action === "save") return jsonOut(savePrices(b.rowIndex, b.tvscPrice, b.expectedPrice));
-    return jsonOut({ success: false, message: "Unknown action." });
-  } catch (err) {
-    return jsonOut({ success: false, message: err.message });
+    const res = await apiGet({ action:'vehicles', name:user.name, role:user.role });
+    if (!res.success) { toast('Error loading vehicles: ' + res.message, 'err'); return; }
+    vehicles = res.data;
+    const updated = vehicles.filter(v => String(v.status).toLowerCase() === 'updated').length;
+    // update header sub
+    document.getElementById('hdr-sub').textContent =
+      `Welcome, ${user.name} · ${updated}/${vehicles.length} updated`;
+    buildEvalFilter();
+    renderStats();
+    filter();
+    startAutoRefresh();
+  } catch(e) {
+    toast('Network error. Please retry.', 'err');
+  }
+  if (user.role === 'Admin') {
+    try {
+      const pres = await apiGet({ action:'pivot' });
+      if (pres.success) pivotData = pres.pivot;
+    } catch(_) {}
   }
 }
 
-// ── AUTH ──────────────────────────────────────────────────────
-function loginByMobile(mobile) {
-  if (!mobile) return { success: false, message: "Mobile is required." };
-  const data = SpreadsheetApp.openById(SHEET_ID).getSheetByName(USERS_SHEET).getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][USER_COL.MOBILE - 1]).trim() === String(mobile).trim()) {
-      return { success: true, user: {
-        mobile: String(data[i][USER_COL.MOBILE - 1]).trim(),
-        name:   String(data[i][USER_COL.NAME - 1]),
-        role:   String(data[i][USER_COL.ROLE - 1])
-      }};
+function showLoading() {
+  document.getElementById('tbody').innerHTML =
+    '<tr><td colspan="12"><div class="loader"><div class="spin"></div><span>Loading vehicles…</span></div></td></tr>';
+  document.getElementById('m-cards').innerHTML =
+    '<div class="loader"><div class="spin"></div><span>Loading…</span></div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════════════════════
+function renderStats() {
+  const total   = vehicles.length;
+  const updated = vehicles.filter(v => String(v.status).toLowerCase() === 'updated').length;
+  const pending = total - updated;
+  document.getElementById('stat-total').textContent   = total;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-updated').textContent = updated;
+  // also update header sub
+  document.getElementById('hdr-sub').textContent =
+    `Welcome, ${user.name} · ${updated}/${total} updated`;
+  requestAnimationFrame(recalcSticky);
+}
+
+// ══════════════════════════════════════════════════════════════
+// FILTER
+// ══════════════════════════════════════════════════════════════
+function filter() {
+  const q  = (document.getElementById('q').value || '').toLowerCase();
+  const st = (document.getElementById('st-flt').value || '').toLowerCase();
+  const ev = document.getElementById('ev-flt').value || '';
+  const f  = vehicles.filter(v => {
+    const mq = !q ||
+      String(v.registrationNumber).toLowerCase().includes(q) ||
+      String(v.makeModel).toLowerCase().includes(q) ||
+      String(v.customerName).toLowerCase().includes(q) ||
+      String(v.evaluatorName).toLowerCase().includes(q);
+    const ms = !st || String(v.status).toLowerCase() === st;
+    const me = !ev || v.evaluatorName === ev;
+    return mq && ms && me;
+  });
+  document.getElementById('count-chip').textContent = f.length + ' vehicle' + (f.length !== 1 ? 's' : '');
+  renderTable(f);
+  renderCards(f);
+}
+
+function buildEvalFilter() {
+  const sel   = document.getElementById('ev-flt');
+  const names = [...new Set(vehicles.map(v => v.evaluatorName).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All Evaluators</option>' +
+    names.map(n => `<option>${n}</option>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// DESKTOP TABLE
+// ══════════════════════════════════════════════════════════════
+function renderTable(list) {
+  if (!list.length) {
+    document.getElementById('tbody').innerHTML =
+      '<tr><td colspan="12"><div class="empty"><div class="empty-ico">🚗</div><p>No vehicles found</p></div></td></tr>';
+    return;
+  }
+  document.getElementById('tbody').innerHTML = list.map((v, i) => {
+    const done   = String(v.status).toLowerCase() === 'updated';
+    const fuelTrans = [v.fuelType, v.transmission].filter(Boolean).join(' / ') || '—';
+    const locked = done ? 'disabled' : '';
+    return `<tr>
+      <td class="td-num">${i+1}</td>
+      <td class="td-fixed"><span class="reg">${v.registrationNumber}</span></td>
+      <td>
+        <div class="model-name">${v.makeModel||'—'}</div>
+        ${v.colorId ? `<span class="color-tag">${v.colorId}</span>` : ''}
+      </td>
+      <td class="td-fixed"><span class="yr">${v.yearOfMfg||'—'}</span></td>
+      <td class="sub-text" style="word-break:break-word">${fuelTrans}</td>
+      <td><div class="cust-name">${v.customerName||'—'}</div></td>
+      <td><div class="eval-name">${v.evaluatorName||'—'}</div></td>
+      <td class="td-fixed sub-text">${v.speedometer ? Number(v.speedometer).toLocaleString()+' km' : '—'}</td>
+      <td class="td-fixed">
+        <div class="price-cell">
+          <span class="rupee">₹</span>
+          <input class="pi ${done?'filled':''}" type="number" id="tv-${v.rowIndex}"
+                 value="${v.tvscPrice||''}" placeholder="0" min="0" ${locked}
+                 oninput="previewStart(${v.rowIndex})"/>
+        </div>
+      </td>
+      <td class="td-fixed">
+        <div class="price-cell">
+          <span class="rupee">₹</span>
+          <input class="pi ${done?'filled':''}" type="number" id="ex-${v.rowIndex}"
+                 value="${v.expectedPrice||''}" placeholder="0" min="0" ${locked}
+                 oninput="previewStart(${v.rowIndex})"/>
+        </div>
+      </td>
+      <td class="td-fixed">
+        <span class="status ${done?'updated':'pending'}" id="st-${v.rowIndex}">
+          ${v.status||'Pending'}
+        </span>
+      </td>
+      <td class="td-fixed">
+        ${done
+          ? `<button class="btn-edit" id="sb-${v.rowIndex}" onclick="enableEdit(${v.rowIndex},'desktop')">✏ Edit</button>`
+          : `<button class="btn-save" id="sb-${v.rowIndex}" onclick="save(${v.rowIndex})">Save</button>`
+        }
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// MOBILE CARDS
+// ══════════════════════════════════════════════════════════════
+function renderCards(list) {
+  if (!list.length) {
+    document.getElementById('m-cards').innerHTML =
+      '<div class="empty"><div class="empty-ico">🚗</div><p>No vehicles found</p></div>';
+    return;
+  }
+  document.getElementById('m-cards').innerHTML = list.map((v, i) => {
+    const done   = String(v.status).toLowerCase() === 'updated';
+    const locked = done ? 'disabled' : '';
+    return `
+    <div class="m-card ${done?'is-updated':'is-pending'}">
+      <div class="m-card-body">
+        <div class="m-card-top">
+          <div>
+            <div class="m-card-reg">${v.registrationNumber}</div>
+            <div class="m-card-model">${v.makeModel}</div>
+            <div class="m-card-meta">${v.yearOfMfg||''} · ${v.fuelType||''} · ${v.colorId||''}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <span class="status ${done?'updated':'pending'}" id="mc-st-${v.rowIndex}">
+              ${v.status||'Pending'}
+            </span>
+            <div class="idx-circle ${done?'updated':'pending'}">${i+1}</div>
+          </div>
+        </div>
+        <div class="m-grid">
+          <div class="m-field"><label>Customer</label><span style="color:var(--blue-stat);font-weight:600">${v.customerName||'—'}</span></div>
+          <div class="m-field"><label>Evaluator</label><span>${v.evaluatorName||'—'}</span></div>
+          <div class="m-field"><label>Transmission</label><span>${v.transmission||'—'}</span></div>
+          <div class="m-field"><label>Odometer</label><span>${v.speedometer?Number(v.speedometer).toLocaleString()+' km':'—'}</span></div>
+        </div>
+        <div class="m-prices">
+          <div class="m-field">
+            <label>TVSC Price ₹</label>
+            <input class="pi ${done?'filled':''}" type="number" id="mc-tv-${v.rowIndex}"
+                   value="${v.tvscPrice||''}" placeholder="Market price" min="0" ${locked}
+                   oninput="previewStartM(${v.rowIndex})"/>
+          </div>
+          <div class="m-field">
+            <label>Expected Price ₹</label>
+            <input class="pi ${done?'filled':''}" type="number" id="mc-ex-${v.rowIndex}"
+                   value="${v.expectedPrice||''}" placeholder="Reserved price" min="0" ${locked}
+                   oninput="previewStartM(${v.rowIndex})"/>
+          </div>
+        </div>
+        <div class="m-footer">
+          <div class="m-ts" id="mc-ts-${v.rowIndex}" style="font-size:11px;color:var(--muted)">
+            ${v.timestamp ? 'Saved: '+v.timestamp : ''}
+          </div>
+          ${done
+            ? `<button class="btn-edit" id="mc-sb-${v.rowIndex}" onclick="enableEdit(${v.rowIndex},'mobile')">✏ Edit</button>`
+            : `<button class="btn-save" id="mc-sb-${v.rowIndex}" onclick="saveM(${v.rowIndex})">Save</button>`
+          }
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// START PRICE
+// ══════════════════════════════════════════════════════════════
+// calcStart(expectedPrice, tvscPrice) → TVSC - (bracket × 2)
+function calcStart(expVal, tvVal) {
+  const exp = Number(expVal);
+  const tv  = Number(tvVal);
+  if (!exp || isNaN(exp) || !tv || isNaN(tv)) return null;
+  const bracket = exp >= 700000 ? 7000 : exp >= 500000 ? 5000 : 2000;
+  const multiplier = exp < 500000 ? 3 : 2;
+  return tv - (bracket * multiplier);
+}
+function previewStart(ri) {
+  const sp = calcStart(
+    document.getElementById('ex-'+ri)?.value,
+    document.getElementById('tv-'+ri)?.value
+  );
+  const el = document.getElementById('sp-'+ri);
+  if (el) { el.textContent = sp != null ? '₹ '+sp.toLocaleString() : '—'; el.className='start-val'+(sp != null?'':' empty'); }
+}
+function previewStartM(ri) {
+  const sp = calcStart(
+    document.getElementById('mc-ex-'+ri)?.value,
+    document.getElementById('mc-tv-'+ri)?.value
+  );
+  const el = document.getElementById('mc-sp-'+ri);
+  if (el) el.textContent = 'Start: '+(sp != null ? '₹ '+sp.toLocaleString() : 'Auto-calc');
+}
+
+// ══════════════════════════════════════════════════════════════
+// VALIDATION HELPER
+// ══════════════════════════════════════════════════════════════
+function validatePrices(tv, ex, prefix) {
+  if (!tv || tv === '') { toast('TVSC Price is required before saving.', 'err'); return false; }
+  if (!ex || ex === '') { toast('Expected Price is required before saving.', 'err'); return false; }
+  if (Number(tv) > Number(ex)) {
+    toast('TVSC Price must be ≤ Expected Price.', 'err');
+    // flash the TVSC input red
+    const el = document.getElementById(prefix + 'tv-' + (prefix ? '' : ''));
+    return false;
+  }
+  return true;
+}
+
+// ══════════════════════════════════════════════════════════════
+// EDIT MODE TOGGLE
+// ══════════════════════════════════════════════════════════════
+function enableEdit(ri, mode) {
+  if (mode === 'desktop') {
+    ['tv-','ex-'].forEach(p => {
+      const el = document.getElementById(p+ri);
+      if (el) { el.disabled = false; el.classList.remove('filled'); el.classList.add('editing'); }
+    });
+    const btn = document.getElementById('sb-'+ri);
+    if (btn) {
+      btn.className = 'btn-save';
+      btn.textContent = 'Save';
+      btn.onclick = () => save(ri);
+    }
+  } else {
+    ['mc-tv-','mc-ex-'].forEach(p => {
+      const el = document.getElementById(p+ri);
+      if (el) { el.disabled = false; el.classList.remove('filled'); el.classList.add('editing'); }
+    });
+    const btn = document.getElementById('mc-sb-'+ri);
+    if (btn) {
+      btn.className = 'btn-save';
+      btn.textContent = 'Save';
+      btn.onclick = () => saveM(ri);
     }
   }
-  return { success: false, message: "Mobile number not registered." };
+  toast('Prices unlocked for editing.', 'ok');
 }
 
-// ── FETCH VEHICLES ────────────────────────────────────────────
-function getVehicles(userName, role) {
-  const data = SpreadsheetApp.openById(SHEET_ID).getSheetByName(DATA_SHEET).getDataRange().getValues();
-  const rows = [];
-  for (let i = 1; i < data.length; i++) {
-    const r = data[i];
-    if (!r[COL.REGISTRATION_NUMBER - 1]) continue;
-    if (role !== "Admin" && String(r[COL.EVALUATOR_NAME - 1]).trim() !== String(userName).trim()) continue;
-    rows.push({
-      rowIndex: i + 1,
-      index: r[COL.INDEX - 1],
-      evaluationDate: fmt(r[COL.EVALUATION_DATE - 1]),
-      registrationNumber: r[COL.REGISTRATION_NUMBER - 1],
-      stage: r[COL.STAGE - 1],
-      customerName: r[COL.CUSTOMER_NAME - 1],
-      evaluatorName: r[COL.EVALUATOR_NAME - 1],
-      makeModel: r[COL.MAKE_MODEL - 1],
-      colorId: r[COL.COLOR_ID - 1],
-      fuelType: r[COL.FUEL_TYPE - 1],
-      transmission: r[COL.TRANSMISSION - 1],
-      yearOfMfg: r[COL.YEAR_OF_MFG - 1],
-      insuranceEndDate: fmt(r[COL.INSURANCE_END_DATE - 1]),
-      rcRegnDate: fmt(r[COL.RC_REGN_DATE - 1]),
-      vehicleOwnerNumber: r[COL.VEHICLE_OWNER_NUMBER - 1],
-      speedometer: r[COL.SPEEDOMETER - 1],
-      timestamp: fmt(r[COL.TIMESTAMP - 1]),
-      status: r[COL.STATUS - 1] || "Pending",
-      tvscPrice: r[COL.TVSC_PRICE - 1] || "",
-      expectedPrice: r[COL.EXPECTED_PRICE - 1] || "",
-      startPrice: r[COL.START_PRICE - 1] || ""
+// ══════════════════════════════════════════════════════════════
+// SAVE — DESKTOP
+// ══════════════════════════════════════════════════════════════
+async function save(ri) {
+  const tvEl = document.getElementById('tv-'+ri);
+  const exEl = document.getElementById('ex-'+ri);
+  const tv = tvEl?.value?.trim();
+  const ex = exEl?.value?.trim();
+
+  if (!tv) { toast('TVSC Price is required before saving.', 'err'); tvEl?.focus(); return; }
+  if (!ex) { toast('Expected Price is required before saving.', 'err'); exEl?.focus(); return; }
+  if (Number(tv) > Number(ex)) {
+    toast('TVSC Price must be ≤ Expected Price.', 'err');
+    tvEl?.classList.add('input-err'); setTimeout(() => tvEl?.classList.remove('input-err'), 1800);
+    return;
+  }
+
+  const btn = document.getElementById('sb-'+ri);
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res = await apiPost({ action:'save', rowIndex:ri, tvscPrice:tv, expectedPrice:ex });
+    if (!res.success) { toast('Save failed: '+res.message,'err'); btn.disabled=false; btn.textContent='Save'; return; }
+    applySaveUI(ri, res, 'desktop');
+    toast('Prices saved successfully!', 'ok');
+  } catch(e) {
+    toast('Network error. Please retry.', 'err');
+    btn.disabled=false; btn.textContent='Save';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// SAVE — MOBILE
+// ══════════════════════════════════════════════════════════════
+async function saveM(ri) {
+  const tvEl = document.getElementById('mc-tv-'+ri);
+  const exEl = document.getElementById('mc-ex-'+ri);
+  const tv = tvEl?.value?.trim();
+  const ex = exEl?.value?.trim();
+
+  if (!tv) { toast('TVSC Price is required before saving.', 'err'); tvEl?.focus(); return; }
+  if (!ex) { toast('Expected Price is required before saving.', 'err'); exEl?.focus(); return; }
+  if (Number(tv) > Number(ex)) {
+    toast('TVSC Price must be ≤ Expected Price.', 'err');
+    tvEl?.classList.add('input-err'); setTimeout(() => tvEl?.classList.remove('input-err'), 1800);
+    return;
+  }
+
+  const btn = document.getElementById('mc-sb-'+ri);
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res = await apiPost({ action:'save', rowIndex:ri, tvscPrice:tv, expectedPrice:ex });
+    if (!res.success) { toast('Save failed: '+res.message,'err'); btn.disabled=false; btn.textContent='Save'; return; }
+    applySaveUI(ri, res, 'mobile');
+    toast('Prices saved!', 'ok');
+  } catch(e) {
+    toast('Network error. Please retry.', 'err');
+    btn.disabled=false; btn.textContent='Save';
+  }
+}
+
+function applySaveUI(ri, res, mode) {
+  if (mode === 'desktop') {
+    // lock inputs
+    ['tv-','ex-'].forEach(p => {
+      const el = document.getElementById(p+ri);
+      if (el) { el.disabled = true; el.classList.add('filled'); el.classList.remove('editing','input-err'); }
     });
+    // swap Save → Edit
+    const btn = document.getElementById('sb-'+ri);
+    if (btn) { btn.disabled=false; btn.textContent='✏ Edit'; btn.className='btn-edit'; btn.onclick=()=>enableEdit(ri,'desktop'); }
+    const st = document.getElementById('st-'+ri);
+    if (st) { st.textContent='Updated'; st.className='status updated'; }
+  } else {
+    // lock inputs
+    ['mc-tv-','mc-ex-'].forEach(p => {
+      const el = document.getElementById(p+ri);
+      if (el) { el.disabled = true; el.classList.add('filled'); el.classList.remove('editing','input-err'); }
+    });
+    // swap Save → Edit
+    const btn = document.getElementById('mc-sb-'+ri);
+    if (btn) { btn.disabled=false; btn.textContent='✏ Edit'; btn.className='btn-edit'; btn.onclick=()=>enableEdit(ri,'mobile'); }
+    const st = document.getElementById('mc-st-'+ri);
+    if (st) { st.textContent='Updated'; st.className='status updated'; }
+    const ts = document.getElementById('mc-ts-'+ri);
+    if (ts) ts.textContent = 'Saved: '+res.timestamp;
+    const card = document.getElementById('mc-sb-'+ri)?.closest('.m-card');
+    if (card) card.className = 'm-card is-updated';
   }
-  return { success: true, data: rows };
+  const v = vehicles.find(x => x.rowIndex === ri);
+  if (v) { v.status='Updated'; v.timestamp=res.timestamp; v.startPrice=res.startPrice; }
+  renderStats();
 }
 
-// ── SAVE ──────────────────────────────────────────────────────
-function savePrices(rowIndex, tvscPrice, expectedPrice) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(DATA_SHEET);
-  const sp = calcStartPrice(Number(expectedPrice), Number(tvscPrice));
-  const now = new Date();
-  sheet.getRange(rowIndex, COL.TVSC_PRICE).setValue(Number(tvscPrice));
-  sheet.getRange(rowIndex, COL.EXPECTED_PRICE).setValue(Number(expectedPrice));
-  sheet.getRange(rowIndex, COL.START_PRICE).setValue(sp);
-  sheet.getRange(rowIndex, COL.STATUS).setValue("Updated");
-  sheet.getRange(rowIndex, COL.TIMESTAMP).setValue(now);
-  return { success: true, startPrice: sp, timestamp: fmt(now) };
-}
 
-// ── PIVOT ─────────────────────────────────────────────────────
-function getAdminPivot() {
-  const data = SpreadsheetApp.openById(SHEET_ID).getSheetByName(DATA_SHEET).getDataRange().getValues();
-  const pivot = {};
-  for (let i = 1; i < data.length; i++) {
-    const r = data[i];
-    if (!r[COL.REGISTRATION_NUMBER - 1]) continue;
-    const ev = r[COL.EVALUATOR_NAME - 1] || "Unassigned";
-    const st = r[COL.STATUS - 1] || "Pending";
-    if (!pivot[ev]) pivot[ev] = { updated: 0, pending: 0, total: 0 };
-    pivot[ev].total++;
-    String(st).toLowerCase() === "updated" ? pivot[ev].updated++ : pivot[ev].pending++;
+// ══════════════════════════════════════════════════════════════
+// PIVOT
+// ══════════════════════════════════════════════════════════════
+function renderPivot() {
+  const entries = Object.entries(pivotData).sort((a,b) => b[1].total - a[1].total);
+  if (!entries.length) {
+    document.getElementById('pivot-tbody').innerHTML =
+      '<tr><td colspan="6"><div class="empty"><p>No data available</p></div></td></tr>';
+    return;
   }
-  return { success: true, pivot: pivot };
+  document.getElementById('pivot-tbody').innerHTML = entries.map(([name, d]) => {
+    const pct = d.total ? Math.round(d.updated / d.total * 100) : 0;
+    const col = pct === 100 ? 'var(--green)' : pct > 50 ? 'var(--orange)' : 'var(--red)';
+    return `<tr>
+      <td class="p-name">${name}</td>
+      <td><strong>${d.total}</strong></td>
+      <td style="color:var(--green)"><strong>${d.updated}</strong></td>
+      <td style="color:var(--orange)"><strong>${d.pending}</strong></td>
+      <td>
+        <div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">${d.updated} of ${d.total}</div>
+      </td>
+      <td><span class="pct" style="color:${col}">${pct}%</span></td>
+    </tr>`;
+  }).join('');
 }
 
-// ── HELPERS ───────────────────────────────────────────────────
-// Start Price = TVSC Price − (bracket × 2)
-// bracket: Expected ≥ 7L → 7000 | ≥ 5L → 5000 | else → 2000
-function calcStartPrice(expectedPrice, tvscPrice) {
-  if (!expectedPrice || isNaN(expectedPrice)) return "";
-  if (!tvscPrice     || isNaN(tvscPrice))     return "";
-  const bracket = expectedPrice >= 700000 ? 7000
-                : expectedPrice >= 500000 ? 5000
-                : 2000;
-  const multiplier = expectedPrice < 500000 ? 3 : 2;
-  return tvscPrice - (bracket * multiplier);
+// ══════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const tab = el.dataset.tab;
+  document.getElementById('tab-vehicles').style.display = tab==='vehicles' ? 'block' : 'none';
+  document.getElementById('tab-pivot').style.display    = tab==='pivot'    ? 'block' : 'none';
+  if (tab === 'pivot') renderPivot();
 }
-function fmt(v) {
-  if (!v) return "";
-  if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), "dd-MM-yyyy HH:mm");
-  return String(v);
+
+// ══════════════════════════════════════════════════════════════
+// STICKY OFFSET — recalculate after login / resize
+// ══════════════════════════════════════════════════════════════
+function recalcSticky() {
+  const header   = document.querySelector('.header');
+  const statsBar = document.querySelector('.stats-bar');
+  const toolbar  = document.querySelector('.toolbar');
+  if (!header || !statsBar || !toolbar) return;
+  const hh = header.getBoundingClientRect().height;
+  const sh = statsBar.getBoundingClientRect().height;
+  statsBar.style.top = hh + 'px';
+  toolbar.style.top  = (hh + sh) + 'px';
 }
+window.addEventListener('resize', recalcSticky);
+
+
+let _refreshTimer = null;
+let _countdownTimer = null;
+let _countdown = 30;
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  _countdown = 30;
+  updateCountdownUI();
+  // tick every second
+  _countdownTimer = setInterval(() => {
+    _countdown--;
+    updateCountdownUI();
+    if (_countdown <= 0) {
+      silentRefresh();
+      _countdown = 30;
+    }
+  }, 1000);
+}
+
+function stopAutoRefresh() {
+  clearInterval(_countdownTimer);
+  clearInterval(_refreshTimer);
+  _countdownTimer = null;
+}
+
+function updateCountdownUI() {
+  const el = document.getElementById('refresh-countdown');
+  if (el) el.textContent = _countdown;
+}
+
+async function silentRefresh() {
+  if (!user) return;
+  const dot = document.getElementById('refresh-dot');
+  if (dot) dot.className = 'refresh-dot syncing';
+  try {
+    const res = await apiGet({ action:'vehicles', name:user.name, role:user.role });
+    if (!res.success) return;
+
+    // Collect which rows currently have unsaved typed input
+    const dirtyRows = new Set(
+      vehicles
+        .filter(v => {
+          const tvEl = document.getElementById('tv-' + v.rowIndex);
+          const exEl = document.getElementById('ex-' + v.rowIndex);
+          const savedTv = String(v.tvscPrice || '');
+          const savedEx = String(v.expectedPrice || '');
+          return (tvEl && tvEl.value !== savedTv) || (exEl && exEl.value !== savedEx);
+        })
+        .map(v => v.rowIndex)
+    );
+
+    // Update vehicles array and only refresh UI for non-dirty rows
+    res.data.forEach(fresh => {
+      const idx = vehicles.findIndex(v => v.rowIndex === fresh.rowIndex);
+      if (idx !== -1) {
+        const old = vehicles[idx];
+        vehicles[idx] = fresh;
+        // If this row has unsaved edits — preserve input values
+        if (dirtyRows.has(fresh.rowIndex)) {
+          vehicles[idx].tvscPrice    = old.tvscPrice;
+          vehicles[idx].expectedPrice = old.expectedPrice;
+        }
+        // Update status badge in DOM silently
+        const stEl = document.getElementById('st-' + fresh.rowIndex);
+        if (stEl) {
+          const done = String(fresh.status).toLowerCase() === 'updated';
+          stEl.textContent = fresh.status || 'Pending';
+          stEl.className   = 'status ' + (done ? 'updated' : 'pending');
+        }
+        // Mobile card status
+        const mcSt = document.getElementById('mc-st-' + fresh.rowIndex);
+        if (mcSt) {
+          const done = String(fresh.status).toLowerCase() === 'updated';
+          mcSt.textContent = fresh.status || 'Pending';
+          mcSt.className   = 'status ' + (done ? 'updated' : 'pending');
+          const card = mcSt.closest('.m-card');
+          if (card) card.className = 'm-card ' + (done ? 'is-updated' : 'is-pending');
+        }
+      } else {
+        vehicles.push(fresh);
+      }
+    });
+
+    // Also fetch pivot if admin
+    if (user.role === 'Admin') {
+      const pres = await apiGet({ action:'pivot' });
+      if (pres.success) pivotData = pres.pivot;
+    }
+
+    renderStats();
+  } catch(_) {
+    // silent fail — don't disrupt user
+  } finally {
+    if (dot) dot.className = 'refresh-dot';
+  }
+}
+
+
+let _tt;
+function toast(msg, type='ok') {
+  clearTimeout(_tt);
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show ' + type;
+  _tt = setTimeout(() => { el.className = ''; }, 3200);
+}
+</script>
+</body>
+</html>
