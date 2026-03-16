@@ -1076,13 +1076,13 @@ const EDIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
 // ── LOCK HELPERS ──────────────────────────────────────────────
 // Returns ms elapsed since save. Returns null if cannot determine.
 function msElapsed(v) {
-  // Best source: epoch ms from server (no timezone issues)
-  if (v.savedAtMs && v.savedAtMs > 0) {
-    return Math.max(0, Date.now() - v.savedAtMs);
+  // Best source: epoch ms from server (only trust if > 0)
+  if (v.savedAtMs && Number(v.savedAtMs) > 0) {
+    return Math.max(0, Date.now() - Number(v.savedAtMs));
   }
   // Fallback: parse formatted timestamp string
   const ts = v.timestamp;
-  if (!ts) return null;
+  if (!ts || String(ts).trim() === '') return null;
   const p = ts.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
   if (!p) return null;
   const d = new Date(
@@ -1094,11 +1094,11 @@ function msElapsed(v) {
 }
 
 function isEditLocked(v) {
-  // Not saved yet → never locked
+  // Not saved / status cleared → always editable
   if (!v || String(v.status).toLowerCase() !== 'updated') return false;
   const elapsed = msElapsed(v);
-  // FAIL-SAFE: if we cannot determine elapsed time → LOCK IT
-  if (elapsed === null) return true;
+  // No time data at all (no savedAtMs, no timestamp) → treat as editable
+  if (elapsed === null) return false;
   return elapsed > EDIT_WINDOW_MS;
 }
 
