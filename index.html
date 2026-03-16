@@ -990,7 +990,7 @@ function renderTable(list) {
   document.getElementById('tbody').innerHTML = list.map((v, i) => {
     const done     = String(v.status).toLowerCase() === 'updated';
     const fuelTrans = [v.fuelType, v.transmission].filter(Boolean).join(' / ') || '—';
-    const locked1h = done && isEditLocked(v.timestamp);
+    const locked1h = done && isEditLocked(v.rowIndex, v.timestamp);
     const hasTvsc  = v.tvscPrice && Number(v.tvscPrice) > 0;
     const hasExp   = v.expectedPrice && Number(v.expectedPrice) > 0;
     return `<tr style="cursor:pointer" onclick="openSheet(${v.rowIndex})">
@@ -1059,7 +1059,7 @@ function renderCards(list) {
         </div>
         ${(() => {
           if (!done) return `<div class="card-tap-hint" id="hint-${v.rowIndex}">👆 Tap to enter prices</div>`;
-          const secs  = secsRemaining(v.timestamp);
+          const secs  = secsRemaining(v.rowIndex, v.timestamp);
           if (secs <= 0) return `<div class="card-tap-hint locked" id="hint-${v.rowIndex}">🔒 Locked</div>`;
           const pct   = secs / (EDIT_WINDOW_MS / 1000);
           const color = pct > 0.5 ? 'green' : pct > 0.2 ? 'amber' : 'red';
@@ -1073,6 +1073,22 @@ function renderCards(list) {
 // ── TIMESTAMP HELPERS ────────────────────────────────────────
 const EDIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
+// ── Persisted save-times in localStorage (survives page refresh) ──
+const LS_SAVES_KEY = 'aeval_save_times';
+function getSaveTimes() {
+  try { return JSON.parse(localStorage.getItem(LS_SAVES_KEY) || '{}'); } catch(_) { return {}; }
+}
+function recordSaveTime(rowIndex) {
+  const s = getSaveTimes();
+  s[rowIndex] = Date.now();
+  localStorage.setItem(LS_SAVES_KEY, JSON.stringify(s));
+}
+function msElapsedSinceRow(rowIndex) {
+  const s = getSaveTimes();
+  if (!s[rowIndex]) return null;
+  return Date.now() - s[rowIndex];
+}
+
 function parseTimestamp(ts) {
   if (!ts) return null;
   const p = ts.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
@@ -1085,15 +1101,19 @@ function parseTimestamp(ts) {
     parseInt(p[5])    // minutes
   );
 }
-function isEditLocked(ts) {
-  const d = parseTimestamp(ts);
-  if (!d) return false;
-  return (Date.now() - d.getTime()) > EDIT_WINDOW_MS;
-}
-function secsRemaining(ts) {
+// Use browser-recorded save time (reliable), fall back to parsed timestamp
+function msElapsed(rowIndex, ts) {
+  const fromBrowser = msElapsedSinceRow(rowIndex);
+  if (fromBrowser !== null) return fromBrowser;
   const d = parseTimestamp(ts);
   if (!d) return 0;
-  return Math.max(0, Math.round((EDIT_WINDOW_MS - (Date.now() - d.getTime())) / 1000));
+  return Date.now() - d.getTime();
+}
+function isEditLocked(rowIndex, ts) {
+  return msElapsed(rowIndex, ts) > EDIT_WINDOW_MS;
+}
+function secsRemaining(rowIndex, ts) {
+  return Math.max(0, Math.round((EDIT_WINDOW_MS - msElapsed(rowIndex, ts)) / 1000));
 }
 function fmtCountdown(secs) {
   const m = Math.floor(secs / 60);
@@ -1116,7 +1136,7 @@ function tickHints() {
     if (String(v.status).toLowerCase() !== 'updated' || !v.timestamp) return;
     const el = document.getElementById('hint-' + v.rowIndex);
     if (!el) return;
-    const secs = secsRemaining(v.timestamp);
+    const secs = secsRemaining(v.rowIndex, v.timestamp);
     if (secs <= 0) {
       el.className = 'card-tap-hint locked';
       el.innerHTML = '🔒 Locked';
@@ -1179,7 +1199,7 @@ function validatePrices(tv, ex, prefix) {
 function enableEdit(ri, mode) {
   // 1-hour lock check
   const v = vehicles.find(x => x.rowIndex === ri);
-  if (v && isEditLocked(v.timestamp)) {
+  if (v && isEditLocked(v.rowIndex, v.timestamp)) {
     const saved   = parseTimestamp(v.timestamp);
     const diffMin = (Date.now() - saved.getTime()) / 60000;
     const hrs = Math.floor(diffMin / 60);
@@ -1303,6 +1323,7 @@ function applySaveUI(ri, res, mode) {
   }
   const v = vehicles.find(x => x.rowIndex === ri);
   if (v) { v.status='Updated'; v.timestamp=res.timestamp; v.startPrice=res.startPrice; }
+  recordSaveTime(ri); // browser-side save time
   renderStats();
 }
 
@@ -1335,7 +1356,7 @@ function openSheet(ri) {
   // ── 1-hour edit lock ──────────────────────────────────────
   let editLocked = false;
   let lockMsg = '';
-  if (done && isEditLocked(v.timestamp)) {
+  if (done && isEditLocked(v.rowIndex, v.timestamp)) {
     editLocked = true;
     const saved   = parseTimestamp(v.timestamp);
     const diffMin = (Date.now() - saved.getTime()) / 60000;
@@ -1431,6 +1452,7 @@ async function sheetSave() {
     }
     // update local state
     const v = vehicles.find(x => x.rowIndex === ri);
+    recordSaveTime(ri); // record browser-side save time for lock check
     if (v) {
       v.status = 'Updated'; v.timestamp = res.timestamp;
       v.startPrice = res.startPrice;
