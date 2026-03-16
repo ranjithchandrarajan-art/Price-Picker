@@ -1074,31 +1074,55 @@ function renderCards(list) {
 const EDIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
 
 // ── LOCK HELPERS ──────────────────────────────────────────────
-// savedAtMs comes directly from the server as epoch milliseconds.
-// No date parsing, no timezone issues, works after every re-login.
-function msElapsed(rowIndex, ts, savedAtMs) {
-  if (savedAtMs && savedAtMs > 0) return Math.max(0, Date.now() - savedAtMs);
-  // fallback: parse the formatted string (covers old records)
-  const p = ts && ts.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
-  if (!p) return 0;
-  const d = new Date(parseInt(p[3]), parseInt(p[2])-1, parseInt(p[1]),
-                     parseInt(p[4]), parseInt(p[5]), parseInt(p[6]||'0'));
-  return isNaN(d.getTime()) ? 0 : Math.max(0, Date.now() - d.getTime());
+// Returns ms elapsed since save. Returns null if cannot determine.
+function msElapsed(v) {
+  // Best source: epoch ms from server (no timezone issues)
+  if (v.savedAtMs && v.savedAtMs > 0) {
+    return Math.max(0, Date.now() - v.savedAtMs);
+  }
+  // Fallback: parse formatted timestamp string
+  const ts = v.timestamp;
+  if (!ts) return null;
+  const p = ts.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (!p) return null;
+  const d = new Date(
+    parseInt(p[3]), parseInt(p[2]) - 1, parseInt(p[1]),
+    parseInt(p[4]), parseInt(p[5]), parseInt(p[6] || '0')
+  );
+  if (isNaN(d.getTime())) return null;
+  return Math.max(0, Date.now() - d.getTime());
 }
+
 function isEditLocked(v) {
+  // Not saved yet → never locked
   if (!v || String(v.status).toLowerCase() !== 'updated') return false;
-  return msElapsed(v.rowIndex, v.timestamp, v.savedAtMs) > EDIT_WINDOW_MS;
+  const elapsed = msElapsed(v);
+  // FAIL-SAFE: if we cannot determine elapsed time → LOCK IT
+  if (elapsed === null) return true;
+  return elapsed > EDIT_WINDOW_MS;
 }
+
 function secsRemaining(v) {
-  return Math.max(0, Math.round((EDIT_WINDOW_MS - msElapsed(v.rowIndex, v.timestamp, v.savedAtMs)) / 1000));
+  const elapsed = msElapsed(v);
+  if (elapsed === null) return 0;
+  return Math.max(0, Math.round((EDIT_WINDOW_MS - elapsed) / 1000));
 }
+
+function fmtElapsed(v) {
+  const elapsed = msElapsed(v);
+  if (elapsed === null) return 'unknown';
+  const diffMin = Math.floor(elapsed / 60000);
+  const diffSec = Math.round((elapsed % 60000) / 1000);
+  return diffMin > 0 ? `${diffMin}m ${diffSec}s` : `${diffSec}s`;
+}
+
 function fmtCountdown(secs) {
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return m + ':' + String(s).padStart(2, '0');
 }
-// No-op kept for compatibility
-function recordSaveTime(rowIndex) {}
+
+function recordSaveTime(rowIndex) {} // kept for compatibility
 
 
 // ── CARD HINT TICKER ─────────────────────────────────────────
@@ -1177,13 +1201,9 @@ function validatePrices(tv, ex, prefix) {
 // EDIT MODE TOGGLE
 // ══════════════════════════════════════════════════════════════
 function enableEdit(ri, mode) {
-  // 1-hour lock check
   const v = vehicles.find(x => x.rowIndex === ri);
   if (v && isEditLocked(v)) {
-    const elapsed = msElapsed(v.rowIndex, v.timestamp);
-    const diffMin = Math.floor(elapsed / 60000);
-    const diffSec = Math.round((elapsed % 60000) / 1000);
-    toast(`🔒 Editing locked — saved ${diffMin}m ${diffSec}s ago (limit: 2 min).`, 'err');
+    toast(`🔒 Editing locked — saved ${fmtElapsed(v)} ago (limit: 2 min).`, 'err');
     return;
   }
   if (mode === 'desktop') {
@@ -1333,22 +1353,16 @@ function openSheet(ri) {
   document.getElementById('sh-err').style.display = 'none';
 
   // ── 2-minute edit lock ────────────────────────────────────
-  let editLocked = false;
-  let lockMsg = '';
-  if (done && isEditLocked(v)) {
-    editLocked = true;
-    const elapsed = msElapsed(v.rowIndex, v.timestamp);
-    const diffMin = Math.floor(elapsed / 60000);
-    const diffSec = Math.round((elapsed % 60000) / 1000);
-    lockMsg = `Saved ${diffMin}m ${diffSec}s ago — editing locked after 2 minutes.`;
-  }
+  const editLocked = done && isEditLocked(v);
+  const lockMsg = editLocked
+    ? `Saved ${fmtElapsed(v)} ago — editing locked after 2 minutes.`
+    : '';
 
   // buttons
   if (!done) {
     document.getElementById('sh-btn-row').innerHTML =
       `<button class="btn-sheet-save" onclick="sheetSave()">Save Prices</button>`;
   } else if (editLocked) {
-    // Edit button completely hidden — only show ✓ Saved
     document.getElementById('sh-btn-row').innerHTML =
       `<button class="btn-sheet-save" style="background:var(--green);width:100%" disabled>✓ Saved</button>`;
     const errEl = document.getElementById('sh-err');
