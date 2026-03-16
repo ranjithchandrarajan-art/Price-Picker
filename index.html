@@ -1059,11 +1059,13 @@ function renderCards(list) {
         </div>
         ${(() => {
           if (!done) return `<div class="card-tap-hint" id="hint-${v.rowIndex}">👆 Tap to enter prices</div>`;
-          const secs  = secsRemaining(v);
-          if (secs <= 0) return `<div class="card-tap-hint locked" id="hint-${v.rowIndex}">🔒 Locked</div>`;
-          const pct   = secs / (EDIT_WINDOW_MS / 1000);
-          const color = pct > 0.5 ? 'green' : pct > 0.2 ? 'amber' : 'red';
-          return `<div class="card-tap-hint done edit-${color}" id="hint-${v.rowIndex}">✏ Edit available <span class="hint-timer">${fmtCountdown(secs)}</span></div>`;
+          const elapsed = msElapsedForReg(v.registrationNumber);
+          if (elapsed === null) return `<div class="card-tap-hint done" id="hint-${v.rowIndex}">✓ Tap to edit prices</div>`;
+          if (elapsed > EDIT_WINDOW_MS) return `<div class="card-tap-hint locked" id="hint-${v.rowIndex}">🔒 Locked</div>`;
+          const secs  = Math.round((EDIT_WINDOW_MS - elapsed) / 1000);
+          const pct   = elapsed / EDIT_WINDOW_MS;
+          const color = pct < 0.5 ? 'green' : pct < 0.8 ? 'amber' : 'red';
+          return `<div class="card-tap-hint done edit-${color}" id="hint-${v.rowIndex}">✏ Edit <span class="hint-timer">${fmtCountdown(secs)}</span></div>`;
         })()}
       </div>
     </div>`;
@@ -1110,7 +1112,7 @@ function isEditLocked(v) {
 
 function secsRemaining(v) {
   const elapsed = msElapsedForReg(v.registrationNumber);
-  if (elapsed === null) return 0;
+  if (elapsed === null) return EDIT_WINDOW_MS / 1000; // no record = treat as just saved
   return Math.max(0, Math.round((EDIT_WINDOW_MS - elapsed) / 1000));
 }
 
@@ -1141,18 +1143,20 @@ function stopHintTicker() {
 }
 function tickHints() {
   vehicles.forEach(v => {
-    if (String(v.status).toLowerCase() !== 'updated' || !v.timestamp) return;
+    if (String(v.status).toLowerCase() !== 'updated') return;
     const el = document.getElementById('hint-' + v.rowIndex);
     if (!el) return;
-    const secs = secsRemaining(v);
-    if (secs <= 0) {
+    const elapsed = msElapsedForReg(v.registrationNumber);
+    if (elapsed === null) return; // not saved in this browser — leave hint as-is
+    if (elapsed > EDIT_WINDOW_MS) {
       el.className = 'card-tap-hint locked';
       el.innerHTML = '🔒 Locked';
     } else {
-      const pct   = secs / (EDIT_WINDOW_MS / 1000);
-      const color = pct > 0.5 ? 'green' : pct > 0.2 ? 'amber' : 'red';
+      const secs  = Math.round((EDIT_WINDOW_MS - elapsed) / 1000);
+      const pct   = elapsed / EDIT_WINDOW_MS;
+      const color = pct < 0.5 ? 'green' : pct < 0.8 ? 'amber' : 'red';
       el.className = 'card-tap-hint done edit-' + color;
-      el.innerHTML = `✏ Edit available <span class="hint-timer">${fmtCountdown(secs)}</span>`;
+      el.innerHTML = `✏ Edit <span class="hint-timer">${fmtCountdown(secs)}</span>`;
     }
   });
 }
