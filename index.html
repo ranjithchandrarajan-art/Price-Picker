@@ -381,8 +381,20 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .card-tap-hint{
   display:flex;align-items:center;justify-content:center;gap:5px;
   font-size:11px;color:var(--muted);margin-top:8px;
+  font-weight:500;transition:color .3s;
 }
 .card-tap-hint.done{color:var(--green)}
+.card-tap-hint.edit-green{color:var(--green)}
+.card-tap-hint.edit-amber{color:var(--orange)}
+.card-tap-hint.edit-red{color:var(--red);animation:pulse-hint 1s ease-in-out infinite}
+.card-tap-hint.locked{color:var(--muted);font-style:italic}
+@keyframes pulse-hint{0%,100%{opacity:1}50%{opacity:.5}}
+.hint-timer{
+  font-weight:800;font-variant-numeric:tabular-nums;
+  background:currentColor;color:white;
+  padding:1px 6px;border-radius:4px;font-size:10.5px;
+  opacity:1;-webkit-text-fill-color:white;
+}
 
 /* ════════════════════════════════════════════════════════════
    BOTTOM SHEET MODAL
@@ -690,7 +702,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
           <select class="flt" id="st-flt" onchange="filter()">
             <option value="">All Statuses</option>
             <option value="Updated">✅ Updated</option>
-            <option value="Pending">⏳ Pending</option>
+            <option value="Pending" selected>⏳ Pending</option>
           </select>
           <select class="flt" id="ev-flt" onchange="filter()" style="display:none">
             <option value="">All Evaluators</option>
@@ -855,6 +867,7 @@ function showErr(msg) {
 function logout() {
   user = null; vehicles = [];
   stopAutoRefresh();
+  stopHintTicker();
   document.getElementById('main-page').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
   document.getElementById('mob').value = '';
@@ -883,8 +896,10 @@ async function loadVehicles() {
       `Welcome, ${user.name} · ${updated}/${vehicles.length} updated`;
     buildEvalFilter();
     renderStats();
+    document.getElementById('st-flt').value = 'Pending'; // default to pending on load
     filter();
     startAutoRefresh();
+    startHintTicker();
   } catch(e) {
     showLoadError(e.message);
   }
@@ -975,7 +990,7 @@ function renderTable(list) {
   document.getElementById('tbody').innerHTML = list.map((v, i) => {
     const done     = String(v.status).toLowerCase() === 'updated';
     const fuelTrans = [v.fuelType, v.transmission].filter(Boolean).join(' / ') || '—';
-    const locked1h = done && isOlderThanHour(v.timestamp);
+    const locked1h = done && isEditLocked(v.timestamp);
     const hasTvsc  = v.tvscPrice && Number(v.tvscPrice) > 0;
     const hasExp   = v.expectedPrice && Number(v.expectedPrice) > 0;
     return `<tr style="cursor:pointer" onclick="openSheet(${v.rowIndex})">
@@ -1042,25 +1057,70 @@ function renderCards(list) {
           <div class="m-field"><label>Transmission</label><span>${v.transmission||'—'}</span></div>
           <div class="m-field"><label>Odometer</label><span>${v.speedometer?Number(v.speedometer).toLocaleString()+' km':'—'}</span></div>
         </div>
-        <div class="card-tap-hint ${done?'done':''}">
-          ${done ? '✓ Tap to edit prices' : '👆 Tap to enter prices'}
-        </div>
+        ${(() => {
+          if (!done) return `<div class="card-tap-hint" id="hint-${v.rowIndex}">👆 Tap to enter prices</div>`;
+          const secs  = secsRemaining(v.timestamp);
+          if (secs <= 0) return `<div class="card-tap-hint locked" id="hint-${v.rowIndex}">🔒 Locked</div>`;
+          const pct   = secs / (EDIT_WINDOW_MS / 1000);
+          const color = pct > 0.5 ? 'green' : pct > 0.2 ? 'amber' : 'red';
+          return `<div class="card-tap-hint done edit-${color}" id="hint-${v.rowIndex}">✏ Edit available <span class="hint-timer">${fmtCountdown(secs)}</span></div>`;
+        })()}
       </div>
     </div>`;
   }).join('');
 }
 
 // ── TIMESTAMP HELPERS ────────────────────────────────────────
+const EDIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
+
 function parseTimestamp(ts) {
   if (!ts) return null;
   const p = ts.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
   if (!p) return null;
   return new Date(p[3], p[2]-1, p[1], p[4], p[5]);
 }
-function isOlderThanHour(ts) {
+function isEditLocked(ts) {
   const d = parseTimestamp(ts);
   if (!d) return false;
-  return (Date.now() - d.getTime()) > 60 * 60 * 1000;
+  return (Date.now() - d.getTime()) > EDIT_WINDOW_MS;
+}
+function secsRemaining(ts) {
+  const d = parseTimestamp(ts);
+  if (!d) return 0;
+  return Math.max(0, Math.round((EDIT_WINDOW_MS - (Date.now() - d.getTime())) / 1000));
+}
+function fmtCountdown(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+// ── CARD HINT TICKER ─────────────────────────────────────────
+let _hintTicker = null;
+function startHintTicker() {
+  stopHintTicker();
+  _hintTicker = setInterval(tickHints, 1000);
+}
+function stopHintTicker() {
+  clearInterval(_hintTicker);
+  _hintTicker = null;
+}
+function tickHints() {
+  vehicles.forEach(v => {
+    if (String(v.status).toLowerCase() !== 'updated' || !v.timestamp) return;
+    const el = document.getElementById('hint-' + v.rowIndex);
+    if (!el) return;
+    const secs = secsRemaining(v.timestamp);
+    if (secs <= 0) {
+      el.className = 'card-tap-hint locked';
+      el.innerHTML = '🔒 Locked';
+    } else {
+      const pct   = secs / (EDIT_WINDOW_MS / 1000);
+      const color = pct > 0.5 ? 'green' : pct > 0.2 ? 'amber' : 'red';
+      el.className = 'card-tap-hint done edit-' + color;
+      el.innerHTML = `✏ Edit available <span class="hint-timer">${fmtCountdown(secs)}</span>`;
+    }
+  });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1113,7 +1173,7 @@ function validatePrices(tv, ex, prefix) {
 function enableEdit(ri, mode) {
   // 1-hour lock check
   const v = vehicles.find(x => x.rowIndex === ri);
-  if (v && isOlderThanHour(v.timestamp)) {
+  if (v && isEditLocked(v.timestamp)) {
     const saved   = parseTimestamp(v.timestamp);
     const diffMin = (Date.now() - saved.getTime()) / 60000;
     const hrs = Math.floor(diffMin / 60);
@@ -1269,7 +1329,7 @@ function openSheet(ri) {
   // ── 1-hour edit lock ──────────────────────────────────────
   let editLocked = false;
   let lockMsg = '';
-  if (done && isOlderThanHour(v.timestamp)) {
+  if (done && isEditLocked(v.timestamp)) {
     editLocked = true;
     const saved   = parseTimestamp(v.timestamp);
     const diffMin = (Date.now() - saved.getTime()) / 60000;
@@ -1379,6 +1439,7 @@ async function sheetSave() {
     if (hint) { hint.textContent='✓ Tap to edit prices'; hint.className='card-tap-hint done'; }
     renderStats();
     closeSheet();
+    startHintTicker();
     toast('Prices saved successfully!', 'ok');
   } catch(e) {
     errEl.textContent = 'Network error. Please retry.';
