@@ -219,33 +219,68 @@ input,select{font-family:var(--font)}
 table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
 thead{background:#f8fafc}
 th{
-  padding:10px 8px;text-align:left;
+  padding:11px 10px;text-align:left;
   font-size:10px;font-weight:700;color:var(--navy);
   text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;
-  border-bottom:2px solid var(--border);overflow:hidden;
+  border-bottom:2px solid var(--border);
 }
-td{padding:9px 8px;border-top:1px solid var(--border);vertical-align:middle;color:var(--text2);overflow:hidden;text-overflow:ellipsis}
+td{
+  padding:10px 10px;border-top:1px solid var(--border);
+  vertical-align:top;color:var(--text2);
+  /* default: allow wrap, clip overflow */
+  word-break:break-word;overflow-wrap:break-word;
+}
 tr:hover td{background:#f8fafc}
-.reg{font-weight:700;font-size:12.5px;color:var(--navy)}
-.model-name{font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;display:block}
-.sub-text{font-size:10.5px;color:var(--muted);margin-top:1px}
-.yr{background:var(--bg);color:var(--muted);font-size:10px;padding:2px 6px;border-radius:5px;border:1px solid var(--border);white-space:nowrap}
+/* alternating row tint */
+tbody tr:nth-child(even) td{background:#fafbfd}
+tbody tr:nth-child(even):hover td{background:#f8fafc}
 
 /* ── COLUMN WIDTHS ─────────────────────────────────────────── */
-table colgroup col:nth-child(1) {width:36px}   /* # */
-table colgroup col:nth-child(2) {width:90px}   /* Reg */
-table colgroup col:nth-child(3) {width:130px}  /* Model */
-table colgroup col:nth-child(4) {width:46px}   /* Year */
-table colgroup col:nth-child(5) {width:80px}   /* Fuel/Trans */
-table colgroup col:nth-child(6) {width:100px}  /* Customer */
-table colgroup col:nth-child(7) {width:90px}   /* Evaluator */
-table colgroup col:nth-child(8) {width:72px}   /* Odometer */
-table colgroup col:nth-child(9) {width:100px}  /* TVSC */
-table colgroup col:nth-child(10){width:100px}  /* Expected */
-table colgroup col:nth-child(11){width:72px}   /* Start */
-table colgroup col:nth-child(12){width:74px}   /* Status */
-table colgroup col:nth-child(13){width:82px}   /* Timestamp */
-table colgroup col:nth-child(14){width:62px}   /* Action */
+table colgroup col:nth-child(1) {width:38px}   /* #          — fixed  */
+table colgroup col:nth-child(2) {width:94px}   /* Reg No.    — fixed  */
+table colgroup col:nth-child(3) {width:13%}    /* Make/Model — wrap   */
+table colgroup col:nth-child(4) {width:46px}   /* Year       — fixed  */
+table colgroup col:nth-child(5) {width:76px}   /* Fuel/Trans — fixed  */
+table colgroup col:nth-child(6) {width:11%}    /* Customer   — wrap   */
+table colgroup col:nth-child(7) {width:10%}    /* Evaluator  — wrap   */
+table colgroup col:nth-child(8) {width:72px}   /* Odometer   — fixed  */
+table colgroup col:nth-child(9) {width:96px}   /* TVSC       — fixed  */
+table colgroup col:nth-child(10){width:96px}   /* Expected   — fixed  */
+table colgroup col:nth-child(11){width:70px}   /* Start      — fixed  */
+table colgroup col:nth-child(12){width:76px}   /* Status     — fixed  */
+table colgroup col:nth-child(13){width:76px}   /* Timestamp  — fixed  */
+table colgroup col:nth-child(14){width:58px}   /* Action     — fixed  */
+
+/* ── FIXED (no-wrap) columns helper ──────────────────────────  */
+td.td-fixed{white-space:nowrap;word-break:normal;overflow-wrap:normal}
+td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--muted);font-size:12px}
+
+/* ── CELL CONTENT STYLES ───────────────────────────────────── */
+.reg{
+  font-weight:700;font-size:12.5px;color:var(--navy);
+  white-space:nowrap;display:inline-block;
+}
+/* Make / Model cell */
+.model-name{font-weight:600;font-size:12.5px;color:var(--text);line-height:1.35}
+.color-tag{
+  display:inline-block;margin-top:3px;
+  font-size:10px;color:var(--muted);
+  background:var(--bg);border:1px solid var(--border);
+  padding:1px 6px;border-radius:4px;
+}
+/* Customer cell */
+.cust-name{
+  font-size:12.5px;font-weight:600;color:var(--blue-stat);
+  line-height:1.35;
+}
+/* Evaluator cell */
+.eval-name{font-size:12.5px;font-weight:500;color:var(--text2);line-height:1.35}
+.sub-text{font-size:10.5px;color:var(--muted);margin-top:1px}
+.yr{
+  background:var(--bg);color:var(--muted);font-size:10px;
+  padding:2px 6px;border-radius:5px;border:1px solid var(--border);
+  white-space:nowrap;display:inline-block;
+}
 
 /* ── STATUS PILLS ──────────────────────────────────────────── */
 .status{
@@ -686,26 +721,27 @@ function renderTable(list) {
   document.getElementById('tbody').innerHTML = list.map((v, i) => {
     const done   = String(v.status).toLowerCase() === 'updated';
     const spShow = v.startPrice || calcStart(v.expectedPrice);
+    const fuelTrans = [v.fuelType, v.transmission].filter(Boolean).join(' / ') || '—';
     return `<tr>
-      <td style="color:var(--muted);font-size:12px">${i+1}</td>
-      <td><span class="reg">${v.registrationNumber}</span></td>
+      <td class="td-num">${i+1}</td>
+      <td class="td-fixed"><span class="reg">${v.registrationNumber}</span></td>
       <td>
-        <div class="model-name">${v.makeModel}</div>
-        <div class="sub-text">${v.colorId||''}</div>
+        <div class="model-name">${v.makeModel||'—'}</div>
+        ${v.colorId ? `<span class="color-tag">${v.colorId}</span>` : ''}
       </td>
-      <td><span class="yr">${v.yearOfMfg||'—'}</span></td>
-      <td class="sub-text">${v.fuelType||'—'} / ${v.transmission||'—'}</td>
-      <td style="font-size:13px;color:var(--blue-stat);font-weight:500">${v.customerName||'—'}</td>
-      <td style="font-size:13px">${v.evaluatorName||'—'}</td>
-      <td style="font-size:13px">${v.speedometer ? Number(v.speedometer).toLocaleString()+' km' : '—'}</td>
-      <td>
+      <td class="td-fixed"><span class="yr">${v.yearOfMfg||'—'}</span></td>
+      <td class="td-fixed sub-text">${fuelTrans}</td>
+      <td><div class="cust-name">${v.customerName||'—'}</div></td>
+      <td><div class="eval-name">${v.evaluatorName||'—'}</div></td>
+      <td class="td-fixed sub-text">${v.speedometer ? Number(v.speedometer).toLocaleString()+' km' : '—'}</td>
+      <td class="td-fixed">
         <div class="price-cell">
           <span class="rupee">₹</span>
           <input class="pi ${done?'filled':''}" type="number" id="tv-${v.rowIndex}"
                  value="${v.tvscPrice||''}" placeholder="0" min="0"/>
         </div>
       </td>
-      <td>
+      <td class="td-fixed">
         <div class="price-cell">
           <span class="rupee">₹</span>
           <input class="pi ${done?'filled':''}" type="number" id="ex-${v.rowIndex}"
@@ -713,20 +749,22 @@ function renderTable(list) {
                  oninput="previewStart(${v.rowIndex})"/>
         </div>
       </td>
-      <td>
+      <td class="td-fixed">
         <span class="start-val ${spShow?'':'empty'}" id="sp-${v.rowIndex}">
-          ${spShow ? '₹ '+Number(spShow).toLocaleString() : '—'}
+          ${spShow ? '₹&nbsp;'+Number(spShow).toLocaleString() : '—'}
         </span>
       </td>
-      <td>
+      <td class="td-fixed">
         <span class="status ${done?'updated':'pending'}" id="st-${v.rowIndex}">
           ${v.status||'Pending'}
         </span>
       </td>
-      <td style="font-size:11px;color:var(--muted)" id="ts-${v.rowIndex}">${v.timestamp ? v.timestamp.split(' ')[0] : '—'}</td>
-      <td>
+      <td class="td-fixed" style="font-size:11px;color:var(--muted)" id="ts-${v.rowIndex}">
+        ${v.timestamp ? v.timestamp.split(' ')[0] : '—'}
+      </td>
+      <td class="td-fixed">
         <button class="btn-save ${done?'done':''}" id="sb-${v.rowIndex}"
-                onclick="save(${v.rowIndex})">${done?'✓ Saved':'Save'}</button>
+                onclick="save(${v.rowIndex})">${done?'✓':'Save'}</button>
       </td>
     </tr>`;
   }).join('');
