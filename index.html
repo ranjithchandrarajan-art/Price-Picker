@@ -240,7 +240,7 @@ table colgroup col:nth-child(1) {width:38px}   /* #          — fixed  */
 table colgroup col:nth-child(2) {width:94px}   /* Reg No.    — fixed  */
 table colgroup col:nth-child(3) {width:15%}    /* Make/Model — wrap   */
 table colgroup col:nth-child(4) {width:46px}   /* Year       — fixed  */
-table colgroup col:nth-child(5) {width:80px}   /* Fuel/Trans — fixed  */
+table colgroup col:nth-child(5) {width:80px}   /* Fuel/Trans — wrap   */
 table colgroup col:nth-child(6) {width:13%}    /* Customer   — wrap   */
 table colgroup col:nth-child(7) {width:12%}    /* Evaluator  — wrap   */
 table colgroup col:nth-child(8) {width:80px}   /* Odometer   — fixed  */
@@ -725,7 +725,7 @@ function renderTable(list) {
         ${v.colorId ? `<span class="color-tag">${v.colorId}</span>` : ''}
       </td>
       <td class="td-fixed"><span class="yr">${v.yearOfMfg||'—'}</span></td>
-      <td class="td-fixed sub-text">${fuelTrans}</td>
+      <td class="sub-text" style="word-break:break-word">${fuelTrans}</td>
       <td><div class="cust-name">${v.customerName||'—'}</div></td>
       <td><div class="eval-name">${v.evaluatorName||'—'}</div></td>
       <td class="td-fixed sub-text">${v.speedometer ? Number(v.speedometer).toLocaleString()+' km' : '—'}</td>
