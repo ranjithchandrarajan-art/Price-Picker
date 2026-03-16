@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Auction Price Evaluator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+
+
+/* ── RESET & BASE ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D0F14; --surface:#151820; --surface2:#1C2030;
+  --border:#252A3A; --accent:#F4A928; --accent2:#E07B20;
+  --green:#22C55E; --red:#EF4444; --blue:#3B82F6;
+  --text:#F0F2F8; --muted:#8892A4;
+  --card-radius:16px;
+  --font-head:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;background:none;font-family:var(--font-body)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+#app{min-height:100vh;display:flex;flex-direction:column}
+
+/* ── HEADER ────────────────────────────────────────────────── */
+.header{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 24px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.header-logo{font-family:var(--font-head);font-weight:800;font-size:18px;display:flex;align-items:center;gap:8px}
+.logo-icon{
+  width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;
+}
+.header-user{display:flex;align-items:center;gap:12px}
+.badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px}
+.badge.evaluator{background:rgba(244,169,40,.15);color:var(--accent);border:1px solid rgba(244,169,40,.3)}
+.badge.admin{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
+.btn-logout{color:var(--muted);font-size:13px;padding:6px 14px;border:1px solid var(--border);border-radius:8px;transition:.2s}
+.btn-logout:hover{color:var(--text);border-color:var(--muted)}
+
+/* ── LOGIN PAGE ────────────────────────────────────────────── */
+#login-page{
+  flex:1;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(244,169,40,.07) 0%,transparent 70%);
+}
+.login-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:24px;
+  padding:48px 40px;width:100%;max-width:400px;text-align:center;
+}
+.login-icon{
+  width:68px;height:68px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:18px;display:flex;align-items:center;justify-content:center;
+  margin:0 auto 28px;font-size:30px;
+}
+.login-card h1{font-family:var(--font-head);font-size:24px;font-weight:800;margin-bottom:6px}
+.login-card .sub{color:var(--muted);font-size:14px;margin-bottom:32px}
+.field-label{display:block;font-size:11px;font-weight:700;color:var(--muted);
+  margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;text-align:left}
+.field-input{
+  width:100%;padding:14px 16px;background:var(--surface2);
+  border:1.5px solid var(--border);border-radius:12px;
+  color:var(--text);font-family:var(--font-body);font-size:16px;
+  transition:.2s;margin-bottom:16px;
+}
+.field-input:focus{outline:none;border-color:var(--accent);background:var(--bg)}
+.btn-primary{
+  width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#000;font-weight:700;font-size:15px;border-radius:12px;
+  transition:.2s;font-family:var(--font-head);letter-spacing:.3px;
+}
+.btn-primary:hover:not(:disabled){opacity:.9;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed}
+.err-box{color:var(--red);font-size:13px;margin-top:12px;
+  padding:10px 14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;display:none}
+
+/* ── MAIN ───────────────────────────────────────────────────── */
+#main-page{flex:1;display:none}
+.main-inner{padding:24px;max-width:1400px;margin:0 auto;width:100%}
+.page-title{font-family:var(--font-head);font-size:22px;font-weight:800;margin-bottom:4px}
+.page-sub{color:var(--muted);font-size:13px;margin-bottom:22px}
+
+/* ── TABS ───────────────────────────────────────────────────── */
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:4px;margin-bottom:22px;width:fit-content}
+.tab{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;
+  color:var(--muted);transition:.2s;cursor:pointer;user-select:none}
+.tab.active{background:var(--accent);color:#000}
+.tab:hover:not(.active){color:var(--text)}
+
+/* ── STATS ──────────────────────────────────────────────────── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:18px}
+.stat-val{font-family:var(--font-head);font-size:30px;font-weight:800;line-height:1}
+.stat-lbl{font-size:12px;color:var(--muted);margin-top:4px}
+.stat.blue .stat-val{color:var(--blue)}
+.stat.green .stat-val{color:var(--green)}
+.stat.amber .stat-val{color:var(--accent)}
+.stat.red .stat-val{color:var(--red)}
+
+/* ── TOOLBAR ────────────────────────────────────────────────── */
+.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.search-wrap{flex:1;min-width:180px;max-width:300px;position:relative}
+.search-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search-wrap input{
+  width:100%;padding:10px 14px 10px 38px;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:var(--font-body);font-size:14px;
+}
+.search-wrap input:focus{outline:none;border-color:var(--accent)}
+.flt{
+  padding:10px 14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-family:var(--font-body);font-size:14px;cursor:pointer;
+}
+.flt:focus{outline:none;border-color:var(--accent)}
+.count-chip{
+  margin-left:auto;font-size:12px;color:var(--muted);
+  background:var(--surface);border:1px solid var(--border);
+  padding:6px 14px;border-radius:20px;
+}
+
+/* ── TABLE ──────────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;border-radius:var(--card-radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{
+  background:var(--surface2);padding:12px 13px;text-align:left;
+  font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.7px;white-space:nowrap;
+}
+td{padding:11px 13px;border-top:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+tr:hover td{background:rgba(255,255,255,.02)}
+.reg{font-family:var(--font-head);font-weight:700;font-size:13px;color:var(--accent)}
+.model{font-weight:600;font-size:13px}
+.sub-text{font-size:11px;color:var(--muted);margin-top:2px}
+.yr{background:var(--surface2);color:var(--muted);font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--border)}
+.status{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+  padding:4px 10px;border-radius:20px;letter-spacing:.3px}
+.status::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.status.updated{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.status.pending{background:rgba(244,169,40,.1);color:var(--accent);border:1px solid rgba(244,169,40,.2)}
+.pi{
+  width:108px;padding:7px 10px;
+  background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:var(--font-body);font-size:13px;transition:.2s;
+}
+.pi:focus{outline:none;border-color:var(--accent);background:var(--bg)}
+.pi.filled{border-color:rgba(34,197,94,.3)}
+.start-val{font-weight:700;color:var(--green);font-size:13px}
+.start-val.empty{color:var(--muted);font-weight:400}
+.btn-save{
+  padding:7px 16px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#000;font-weight:700;font-size:12px;border-radius:8px;
+  white-space:nowrap;transition:.2s;font-family:var(--font-body);
+}
+.btn-save:hover:not(:disabled){opacity:.9}
+.btn-save:disabled{opacity:.4;cursor:not-allowed}
+.btn-save.done{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.rupee{color:var(--muted);font-size:11px;margin-right:2px}
+.price-cell{display:flex;align-items:center;gap:5px}
+
+/* ── MOBILE CARDS ──────────────────────────────────────────── */
+.m-cards{display:none;flex-direction:column;gap:14px}
+.m-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:18px}
+.m-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.m-card-reg{font-family:var(--font-head);font-weight:800;font-size:15px;color:var(--accent)}
+.m-card-model{font-weight:600;font-size:14px;margin-top:2px}
+.m-card-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.m-field label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;display:block;margin-bottom:5px}
+.m-field span{font-size:13px;font-weight:500}
+.m-prices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.m-prices .pi{width:100%}
+.m-footer{display:flex;justify-content:space-between;align-items:center}
+.m-start{font-size:13px;font-weight:700;color:var(--green)}
+.m-ts{font-size:11px;color:var(--muted);margin-top:8px}
+
+/* ── PIVOT ──────────────────────────────────────────────────── */
+.pivot-wrap{overflow-x:auto;border-radius:var(--card-radius);border:1px solid var(--border)}
+.ptable{width:100%;border-collapse:collapse;font-size:14px}
+.ptable th{background:var(--surface2);padding:13px 18px;text-align:left;
+  font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+.ptable td{padding:14px 18px;border-top:1px solid var(--border)}
+.ptable tr:hover td{background:rgba(255,255,255,.02)}
+.p-name{font-weight:600;font-size:14px}
+.pbar{height:6px;background:var(--border);border-radius:4px;overflow:hidden;width:140px;margin-top:5px}
+.pbar-fill{height:100%;border-radius:4px;transition:.6s;background:linear-gradient(90deg,var(--accent),var(--green))}
+.pct{font-weight:800;font-size:14px}
+
+/* ── LOADER / EMPTY ─────────────────────────────────────────── */
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:64px;color:var(--muted);gap:14px}
+.spin{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.empty{padding:60px;text-align:center;color:var(--muted)}
+.empty-ico{font-size:36px;margin-bottom:10px}
+
+/* ── TOAST ──────────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;
+  opacity:0;transform:translateY(60px);transition:.3s;pointer-events:none;
+}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.ok{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+#toast.err{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media(max-width:768px){
+  .main-inner{padding:16px}
+  .header{padding:0 16px}
+  .login-card{padding:32px 20px}
+  .table-wrap,.pivot-wrap{display:none}
+  .m-cards{display:flex}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .search-wrap{max-width:none;flex:1}
+}
+@media(max-width:420px){
+  .header-logo span:last-child{display:none}
+  .login-card h1{font-size:20px}
+}
+</style>
+</head>
+<body>
+
+
+<!-- ══ MAIN APP ════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Login -->
+  <div id="login-page" style="display:flex;flex:1">
+    <div class="login-card">
+      <div class="login-icon">🚗</div>
+      <h1>Auction Evaluator</h1>
+      <p class="sub">Sign in with your registered mobile number</p>
+      <label class="field-label">Mobile Number</label>
+      <input class="field-input" type="tel" id="mob" maxlength="10"
+             placeholder="Enter 10-digit mobile" onkeydown="if(event.key==='Enter')login()"/>
+      <button class="btn-primary" id="login-btn" onclick="login()">Sign In →</button>
+      <div class="err-box" id="login-err"></div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main-page">
+    <div class="header">
+      <div class="header-logo">
+        <div class="logo-icon">🚗</div>
+        <span>AuctionEval</span>
+      </div>
+      <div class="header-user">
+        <span id="h-name" style="font-size:14px;font-weight:600;color:var(--text)"></span>
+        <span class="badge" id="h-role"></span>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="main-inner">
+      <!-- Admin tabs -->
+      <div class="tabs" id="admin-tabs" style="display:none">
+        <div class="tab active" data-tab="vehicles" onclick="switchTab(this)">🚘 Vehicles</div>
+        <div class="tab" data-tab="pivot" onclick="switchTab(this)">📊 Evaluator Summary</div>
+      </div>
+
+      <div class="page-title" id="pg-title"></div>
+      <div class="page-sub" id="pg-sub"></div>
+
+      <div class="stats-row" id="stats-row"></div>
+
+      <!-- Vehicles tab -->
+      <div id="tab-vehicles">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="q" placeholder="Search reg / model / customer…" oninput="filter()"/>
+          </div>
+          <select class="flt" id="st-flt" onchange="filter()">
+            <option value="">All Status</option>
+            <option value="Updated">Updated</option>
+            <option value="Pending">Pending</option>
+          </select>
+          <select class="flt" id="ev-flt" onchange="filter()" style="display:none">
+            <option value="">All Evaluators</option>
+          </select>
+          <span class="count-chip" id="count-chip"></span>
+        </div>
+
+        <!-- Desktop table -->
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Reg Number</th><th>Make / Model</th><th>Yr</th>
+              <th>Fuel / Trans</th><th>Customer</th><th>Evaluator</th>
+              <th>Odometer</th><th>TVSC Price ₹</th><th>Expected Price ₹</th>
+              <th>Start Price</th><th>Status</th><th>Timestamp</th><th>Action</th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Mobile cards -->
+        <div class="m-cards" id="m-cards"></div>
+      </div>
+
+      <!-- Pivot tab -->
+      <div id="tab-pivot" style="display:none">
+        <div class="pivot-wrap">
+          <table class="ptable">
+            <thead><tr>
+              <th>Evaluator</th><th>Total</th><th>✅ Updated</th>
+              <th>⏳ Pending</th><th>Progress</th><th>Completion</th>
+            </tr></thead>
+            <tbody id="pivot-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIG & STATE
+// ══════════════════════════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbzbDIbB9kXy3YM53dpfq0Y2QizO6C_4nqpjx9vY4a4ph-Cg6Y_5-lvEzV4GaSa3DjT_hg/exec';
+let user = null;
+let vehicles = [];
+let pivotData = {};
+
+// ══════════════════════════════════════════════════════════════
+// API HELPERS
+// ══════════════════════════════════════════════════════════════
+async function apiGet(params) {
+  const url = API_URL + '?' + new URLSearchParams(params);
+  const r = await fetch(url, { redirect: 'follow' });
+  return r.json();
+}
+
+async function apiPost(body) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain' }, // Apps Script needs text/plain for doPost
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+// ══════════════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════════════
+async function login() {
+  const mob = document.getElementById('mob').value.trim();
+  if (!mob || mob.length < 10) { showErr('Enter a valid 10-digit mobile number.'); return; }
+  setLoginLoading(true);
+  try {
+    const res = await apiGet({ action: 'login', mobile: mob });
+    if (!res.success) { showErr(res.message); setLoginLoading(false); return; }
+    user = res.user;
+    setLoginLoading(false);
+    document.getElementById('login-err').style.display = 'none';
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('main-page').style.display = 'block';
+    document.getElementById('h-name').textContent = user.name;
+    const rb = document.getElementById('h-role');
+    rb.textContent = user.role;
+    rb.className = 'badge ' + user.role.toLowerCase();
+    if (user.role === 'Admin') {
+      document.getElementById('admin-tabs').style.display = 'flex';
+      document.getElementById('ev-flt').style.display = 'block';
+      document.getElementById('pg-title').textContent = 'All Vehicles';
+      document.getElementById('pg-sub').textContent = 'Complete overview across all evaluators';
+    } else {
+      document.getElementById('pg-title').textContent = 'My Assigned Vehicles';
+      document.getElementById('pg-sub').textContent = 'Vehicles assigned to you for price evaluation';
+    }
+    loadVehicles();
+  } catch (e) {
+    setLoginLoading(false);
+    showErr('Connection failed. Check the API URL and try again.');
+  }
+}
+
+function setLoginLoading(on) {
+  const btn = document.getElementById('login-btn');
+  btn.disabled = on;
+  btn.textContent = on ? 'Signing in…' : 'Sign In →';
+}
+
+function showErr(msg) {
+  const el = document.getElementById('login-err');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function logout() {
+  user = null; vehicles = [];
+  document.getElementById('main-page').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('mob').value = '';
+  // reset tabs
+  document.getElementById('tab-vehicles').style.display = 'block';
+  document.getElementById('tab-pivot').style.display = 'none';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const first = document.querySelector('.tab');
+  if (first) first.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOAD DATA
+// ══════════════════════════════════════════════════════════════
+async function loadVehicles() {
+  showLoading();
+  try {
+    const res = await apiGet({ action: 'vehicles', name: user.name, role: user.role });
+    if (!res.success) { toast('Error loading vehicles: ' + res.message, 'err'); return; }
+    vehicles = res.data;
+    buildEvalFilter();
+    renderStats();
+    filter();
+  } catch (e) {
+    toast('Network error. Please retry.', 'err');
+  }
+
+  if (user.role === 'Admin') {
+    try {
+      const pres = await apiGet({ action: 'pivot' });
+      if (pres.success) { pivotData = pres.pivot; }
+    } catch (_) {}
+  }
+}
+
+function showLoading() {
+  document.getElementById('tbody').innerHTML =
+    '<tr><td colspan="14"><div class="loader"><div class="spin"></div><span>Loading vehicles…</span></div></td></tr>';
+  document.getElementById('m-cards').innerHTML =
+    '<div class="loader"><div class="spin"></div><span>Loading…</span></div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// FILTER
+// ══════════════════════════════════════════════════════════════
+function filter() {
+  const q  = (document.getElementById('q').value || '').toLowerCase();
+  const st = (document.getElementById('st-flt').value || '').toLowerCase();
+  const ev = document.getElementById('ev-flt').value || '';
+  const f = vehicles.filter(v => {
+    const mq = !q ||
+      String(v.registrationNumber).toLowerCase().includes(q) ||
+      String(v.makeModel).toLowerCase().includes(q) ||
+      String(v.customerName).toLowerCase().includes(q) ||
+      String(v.evaluatorName).toLowerCase().includes(q);
+    const ms = !st || String(v.status).toLowerCase() === st;
+    const me = !ev || v.evaluatorName === ev;
+    return mq && ms && me;
+  });
+  document.getElementById('count-chip').textContent = f.length + ' vehicle' + (f.length !== 1 ? 's' : '');
+  renderTable(f);
+  renderCards(f);
+}
+
+function buildEvalFilter() {
+  const sel = document.getElementById('ev-flt');
+  const names = [...new Set(vehicles.map(v => v.evaluatorName).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All Evaluators</option>' +
+    names.map(n => `<option>${n}</option>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════════════════════
+function renderStats() {
+  const total   = vehicles.length;
+  const updated = vehicles.filter(v => String(v.status).toLowerCase() === 'updated').length;
+  const pending = total - updated;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat blue"><div class="stat-val">${total}</div><div class="stat-lbl">Total Vehicles</div></div>
+    <div class="stat green"><div class="stat-val">${updated}</div><div class="stat-lbl">Updated</div></div>
+    <div class="stat amber"><div class="stat-val">${pending}</div><div class="stat-lbl">Pending</div></div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════
+// DESKTOP TABLE
+// ══════════════════════════════════════════════════════════════
+function renderTable(list) {
+  if (!list.length) {
+    document.getElementById('tbody').innerHTML =
+      '<tr><td colspan="14"><div class="empty"><div class="empty-ico">🚗</div><p>No vehicles found</p></div></td></tr>';
+    return;
+  }
+  document.getElementById('tbody').innerHTML = list.map((v, i) => {
+    const done = String(v.status).toLowerCase() === 'updated';
+    const spCalc = calcStart(v.expectedPrice);
+    const spShow = v.startPrice || spCalc;
+    return `<tr>
+      <td style="color:var(--muted);font-size:12px">${i+1}</td>
+      <td><span class="reg">${v.registrationNumber}</span></td>
+      <td><div class="model">${v.makeModel}</div><div class="sub-text">${v.colorId||''}</div></td>
+      <td><span class="yr">${v.yearOfMfg||'-'}</span></td>
+      <td class="sub-text">${v.fuelType||'-'} / ${v.transmission||'-'}</td>
+      <td style="font-size:13px">${v.customerName||'-'}</td>
+      <td style="font-size:13px">${v.evaluatorName||'-'}</td>
+      <td style="font-size:13px">${v.speedometer ? Number(v.speedometer).toLocaleString()+' km' : '-'}</td>
+      <td><div class="price-cell"><span class="rupee">₹</span>
+        <input class="pi ${done?'filled':''}" type="number" id="tv-${v.rowIndex}"
+               value="${v.tvscPrice||''}" placeholder="0" min="0"/></div></td>
+      <td><div class="price-cell"><span class="rupee">₹</span>
+        <input class="pi ${done?'filled':''}" type="number" id="ex-${v.rowIndex}"
+               value="${v.expectedPrice||''}" placeholder="0" min="0"
+               oninput="previewStart(${v.rowIndex})"/></div></td>
+      <td><span class="start-val ${spShow?'':'empty'}" id="sp-${v.rowIndex}">
+        ${spShow ? '₹ '+Number(spShow).toLocaleString() : '—'}</span></td>
+      <td><span class="status ${done?'updated':'pending'}" id="st-${v.rowIndex}">${v.status||'Pending'}</span></td>
+      <td style="font-size:12px;color:var(--muted)" id="ts-${v.rowIndex}">${v.timestamp||'—'}</td>
+      <td><button class="btn-save ${done?'done':''}" id="sb-${v.rowIndex}"
+            onclick="save(${v.rowIndex})">${done?'✓ Saved':'Save'}</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// MOBILE CARDS
+// ══════════════════════════════════════════════════════════════
+function renderCards(list) {
+  if (!list.length) {
+    document.getElementById('m-cards').innerHTML =
+      '<div class="empty"><div class="empty-ico">🚗</div><p>No vehicles found</p></div>';
+    return;
+  }
+  document.getElementById('m-cards').innerHTML = list.map(v => {
+    const done = String(v.status).toLowerCase() === 'updated';
+    const spCalc = calcStart(v.expectedPrice);
+    const spShow = v.startPrice || spCalc;
+    return `<div class="m-card">
+      <div class="m-card-top">
+        <div>
+          <div class="m-card-reg">${v.registrationNumber}</div>
+          <div class="m-card-model">${v.makeModel}</div>
+          <div class="m-card-meta">${v.yearOfMfg||''} · ${v.fuelType||''} · ${v.colorId||''}</div>
+        </div>
+        <span class="status ${done?'updated':'pending'}" id="mc-st-${v.rowIndex}">${v.status||'Pending'}</span>
+      </div>
+      <div class="m-grid">
+        <div class="m-field"><label>Customer</label><span>${v.customerName||'—'}</span></div>
+        <div class="m-field"><label>Evaluator</label><span>${v.evaluatorName||'—'}</span></div>
+        <div class="m-field"><label>Trans.</label><span>${v.transmission||'—'}</span></div>
+        <div class="m-field"><label>Odometer</label><span>${v.speedometer?Number(v.speedometer).toLocaleString()+' km':'—'}</span></div>
+      </div>
+      <div class="m-prices">
+        <div class="m-field">
+          <label>TVSC Price ₹</label>
+          <input class="pi ${done?'filled':''}" type="number" id="mc-tv-${v.rowIndex}"
+                 value="${v.tvscPrice||''}" placeholder="Market price" min="0"/>
+        </div>
+        <div class="m-field">
+          <label>Expected Price ₹</label>
+          <input class="pi ${done?'filled':''}" type="number" id="mc-ex-${v.rowIndex}"
+                 value="${v.expectedPrice||''}" placeholder="Reserved price" min="0"
+                 oninput="previewStartM(${v.rowIndex})"/>
+        </div>
+      </div>
+      <div class="m-footer">
+        <div class="m-start" id="mc-sp-${v.rowIndex}">
+          Start: ${spShow ? '₹ '+Number(spShow).toLocaleString() : 'Auto-calc'}
+        </div>
+        <button class="btn-save ${done?'done':''}" id="mc-sb-${v.rowIndex}"
+                onclick="saveM(${v.rowIndex})">${done?'✓ Saved':'Save'}</button>
+      </div>
+      <div class="m-ts" id="mc-ts-${v.rowIndex}">${v.timestamp?'Updated: '+v.timestamp:''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// START PRICE HELPERS
+// ══════════════════════════════════════════════════════════════
+function calcStart(val) {
+  const n = Number(val);
+  if (!n || isNaN(n)) return null;
+  return n >= 700000 ? 7000 : n >= 500000 ? 5000 : 2000;
+}
+function previewStart(ri) {
+  const sp = calcStart(document.getElementById('ex-'+ri)?.value);
+  const el = document.getElementById('sp-'+ri);
+  if (el) { el.textContent = sp ? '₹ '+sp.toLocaleString() : '—'; el.className = 'start-val'+(sp?'':' empty'); }
+}
+function previewStartM(ri) {
+  const sp = calcStart(document.getElementById('mc-ex-'+ri)?.value);
+  const el = document.getElementById('mc-sp-'+ri);
+  if (el) el.textContent = 'Start: '+(sp ? '₹ '+sp.toLocaleString() : 'Auto-calc');
+}
+
+// ══════════════════════════════════════════════════════════════
+// SAVE — DESKTOP
+// ══════════════════════════════════════════════════════════════
+async function save(ri) {
+  const tv = document.getElementById('tv-'+ri)?.value;
+  const ex = document.getElementById('ex-'+ri)?.value;
+  if (!tv || !ex) { toast('Enter both TVSC and Expected prices.', 'err'); return; }
+  const btn = document.getElementById('sb-'+ri);
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res = await apiPost({ action:'save', rowIndex:ri, tvscPrice:tv, expectedPrice:ex });
+    if (!res.success) { toast('Save failed: '+res.message, 'err'); btn.disabled=false; btn.textContent='Save'; return; }
+    applySaveUI(ri, res, 'desktop');
+    toast('Prices saved successfully!', 'ok');
+  } catch(e) {
+    toast('Network error. Please retry.', 'err');
+    btn.disabled=false; btn.textContent='Save';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// SAVE — MOBILE
+// ══════════════════════════════════════════════════════════════
+async function saveM(ri) {
+  const tv = document.getElementById('mc-tv-'+ri)?.value;
+  const ex = document.getElementById('mc-ex-'+ri)?.value;
+  if (!tv || !ex) { toast('Enter both TVSC and Expected prices.', 'err'); return; }
+  const btn = document.getElementById('mc-sb-'+ri);
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res = await apiPost({ action:'save', rowIndex:ri, tvscPrice:tv, expectedPrice:ex });
+    if (!res.success) { toast('Save failed: '+res.message, 'err'); btn.disabled=false; btn.textContent='Save'; return; }
+    applySaveUI(ri, res, 'mobile');
+    toast('Prices saved!', 'ok');
+  } catch(e) {
+    toast('Network error. Please retry.', 'err');
+    btn.disabled=false; btn.textContent='Save';
+  }
+}
+
+function applySaveUI(ri, res, mode) {
+  if (mode === 'desktop') {
+    const btn = document.getElementById('sb-'+ri);
+    if (btn) { btn.disabled=false; btn.textContent='✓ Saved'; btn.className='btn-save done'; }
+    const st = document.getElementById('st-'+ri);
+    if (st) { st.textContent='Updated'; st.className='status updated'; }
+    const ts = document.getElementById('ts-'+ri);
+    if (ts) ts.textContent = res.timestamp;
+    const sp = document.getElementById('sp-'+ri);
+    if (sp) { sp.textContent='₹ '+Number(res.startPrice).toLocaleString(); sp.className='start-val'; }
+    ['tv-','ex-'].forEach(p => { const el=document.getElementById(p+ri); if(el) el.classList.add('filled'); });
+  } else {
+    const btn = document.getElementById('mc-sb-'+ri);
+    if (btn) { btn.disabled=false; btn.textContent='✓ Saved'; btn.className='btn-save done'; }
+    const st = document.getElementById('mc-st-'+ri);
+    if (st) { st.textContent='Updated'; st.className='status updated'; }
+    const ts = document.getElementById('mc-ts-'+ri);
+    if (ts) ts.textContent = 'Updated: '+res.timestamp;
+    const sp = document.getElementById('mc-sp-'+ri);
+    if (sp) sp.textContent = 'Start: ₹ '+Number(res.startPrice).toLocaleString();
+    ['mc-tv-','mc-ex-'].forEach(p => { const el=document.getElementById(p+ri); if(el) el.classList.add('filled'); });
+  }
+  const v = vehicles.find(x => x.rowIndex === ri);
+  if (v) { v.status='Updated'; v.timestamp=res.timestamp; v.startPrice=res.startPrice; }
+  renderStats();
+}
+
+// ══════════════════════════════════════════════════════════════
+// PIVOT TABLE
+// ══════════════════════════════════════════════════════════════
+function renderPivot() {
+  const entries = Object.entries(pivotData).sort((a,b) => b[1].total - a[1].total);
+  if (!entries.length) {
+    document.getElementById('pivot-tbody').innerHTML =
+      '<tr><td colspan="6"><div class="empty"><p>No pivot data</p></div></td></tr>';
+    return;
+  }
+  document.getElementById('pivot-tbody').innerHTML = entries.map(([name, d]) => {
+    const pct = d.total ? Math.round(d.updated/d.total*100) : 0;
+    const col = pct===100 ? 'var(--green)' : pct>50 ? 'var(--accent)' : 'var(--red)';
+    return `<tr>
+      <td class="p-name">${name}</td>
+      <td><strong>${d.total}</strong></td>
+      <td style="color:var(--green)"><strong>${d.updated}</strong></td>
+      <td style="color:var(--accent)"><strong>${d.pending}</strong></td>
+      <td><div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div></td>
+      <td><span class="pct" style="color:${col}">${pct}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const tab = el.dataset.tab;
+  document.getElementById('tab-vehicles').style.display = tab==='vehicles' ? 'block' : 'none';
+  document.getElementById('tab-pivot').style.display    = tab==='pivot'    ? 'block' : 'none';
+  if (tab === 'pivot') renderPivot();
+}
+
+// ══════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════
+let _toastTimer;
+function toast(msg, type='ok') {
+  clearTimeout(_toastTimer);
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show '+type;
+  _toastTimer = setTimeout(() => { el.className = ''; }, 3200);
+}
+</script>
+</body>
+</html>
