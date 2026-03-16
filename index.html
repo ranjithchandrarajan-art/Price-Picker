@@ -806,7 +806,8 @@ function renderTable(list) {
         <div class="price-cell">
           <span class="rupee">₹</span>
           <input class="pi ${done?'filled':''}" type="number" id="tv-${v.rowIndex}"
-                 value="${v.tvscPrice||''}" placeholder="0" min="0" ${locked}/>
+                 value="${v.tvscPrice||''}" placeholder="0" min="0" ${locked}
+                 oninput="previewStart(${v.rowIndex})"/>
         </div>
       </td>
       <td class="td-fixed">
@@ -870,7 +871,8 @@ function renderCards(list) {
           <div class="m-field">
             <label>TVSC Price ₹</label>
             <input class="pi ${done?'filled':''}" type="number" id="mc-tv-${v.rowIndex}"
-                   value="${v.tvscPrice||''}" placeholder="Market price" min="0" ${locked}/>
+                   value="${v.tvscPrice||''}" placeholder="Market price" min="0" ${locked}
+                   oninput="previewStartM(${v.rowIndex})"/>
           </div>
           <div class="m-field">
             <label>Expected Price ₹</label>
@@ -896,20 +898,30 @@ function renderCards(list) {
 // ══════════════════════════════════════════════════════════════
 // START PRICE
 // ══════════════════════════════════════════════════════════════
-function calcStart(val) {
-  const n = Number(val);
-  if (!n || isNaN(n)) return null;
-  return n >= 700000 ? 7000 : n >= 500000 ? 5000 : 2000;
+// calcStart(expectedPrice, tvscPrice) → TVSC - (bracket × 2)
+function calcStart(expVal, tvVal) {
+  const exp = Number(expVal);
+  const tv  = Number(tvVal);
+  if (!exp || isNaN(exp) || !tv || isNaN(tv)) return null;
+  const bracket = exp >= 700000 ? 7000 : exp >= 500000 ? 5000 : 2000;
+  const multiplier = exp < 500000 ? 3 : 2;
+  return tv - (bracket * multiplier);
 }
 function previewStart(ri) {
-  const sp = calcStart(document.getElementById('ex-'+ri)?.value);
+  const sp = calcStart(
+    document.getElementById('ex-'+ri)?.value,
+    document.getElementById('tv-'+ri)?.value
+  );
   const el = document.getElementById('sp-'+ri);
-  if (el) { el.textContent = sp ? '₹ '+sp.toLocaleString() : '—'; el.className='start-val'+(sp?'':' empty'); }
+  if (el) { el.textContent = sp != null ? '₹ '+sp.toLocaleString() : '—'; el.className='start-val'+(sp != null?'':' empty'); }
 }
 function previewStartM(ri) {
-  const sp = calcStart(document.getElementById('mc-ex-'+ri)?.value);
+  const sp = calcStart(
+    document.getElementById('mc-ex-'+ri)?.value,
+    document.getElementById('mc-tv-'+ri)?.value
+  );
   const el = document.getElementById('mc-sp-'+ri);
-  if (el) el.textContent = 'Start: '+(sp ? '₹ '+sp.toLocaleString() : 'Auto-calc');
+  if (el) el.textContent = 'Start: '+(sp != null ? '₹ '+sp.toLocaleString() : 'Auto-calc');
 }
 
 // ══════════════════════════════════════════════════════════════
