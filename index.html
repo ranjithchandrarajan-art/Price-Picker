@@ -1091,7 +1091,8 @@ function msElapsedSinceRow(rowIndex) {
 
 function parseTimestamp(ts) {
   if (!ts) return null;
-  const p = ts.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
+  // handles: "16/03/2026 15:14:32" or "16-03-2026 15:14"
+  const p = ts.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})\s+(\d{2}):(\d{2})/);
   if (!p) return null;
   return new Date(
     parseInt(p[3]),   // year
