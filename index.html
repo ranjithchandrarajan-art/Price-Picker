@@ -149,6 +149,8 @@ input,select{font-family:var(--font)}
   background:var(--white);
   display:grid;grid-template-columns:1fr 1fr 1fr;
   border-bottom:1px solid var(--border);
+  position:sticky;top:62px;z-index:98;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
 }
 .stat-cell{
   padding:18px 24px;text-align:center;
@@ -162,16 +164,34 @@ input,select{font-family:var(--font)}
 .stat-lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;
   letter-spacing:.8px;margin-top:4px}
 
-/* ════════════════════════════════════════════════════════════
-   MAIN CONTENT
-════════════════════════════════════════════════════════════ */
-.main-inner{padding:16px 20px;width:100%}
+/* ── MAIN CONTENT ───────────────────────────────────────────── */
+.main-inner{padding:0;width:100%}
+.table-area{padding:16px 20px}
+
+/* ── REFRESH INDICATOR ─────────────────────────────────────── */
+.refresh-chip{
+  display:flex;align-items:center;gap:6px;
+  font-size:11.5px;font-weight:500;color:var(--muted);
+  margin-left:auto;white-space:nowrap;
+}
+.refresh-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--green);flex-shrink:0;
+  animation:pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.4;transform:scale(.7)}
+}
+.refresh-dot.syncing{background:var(--orange);animation:spin-dot .6s linear infinite}
+@keyframes spin-dot{to{transform:rotate(360deg)}}
+.refresh-countdown{font-variant-numeric:tabular-nums}
 
 /* ── TABS ──────────────────────────────────────────────────── */
 .tabs{
   display:flex;gap:2px;
   background:var(--border);border-radius:10px;
-  padding:3px;margin-bottom:18px;width:fit-content;
+  padding:3px;margin:14px 20px;width:fit-content;
 }
 .tab{
   padding:8px 22px;border-radius:8px;font-size:13px;font-weight:600;
@@ -188,9 +208,11 @@ input,select{font-family:var(--font)}
 
 /* ── TOOLBAR ────────────────────────────────────────────────── */
 .toolbar{
-  background:var(--white);border:1px solid var(--border);border-radius:var(--radius);
-  padding:12px 16px;display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;
-  box-shadow:var(--shadow-sm);
+  background:var(--white);border:1px solid var(--border);
+  border-radius:0;border-left:none;border-right:none;
+  padding:10px 20px;display:flex;gap:10px;margin-bottom:0;flex-wrap:wrap;align-items:center;
+  position:sticky;top:134px;z-index:97;
+  box-shadow:0 3px 8px rgba(0,0,0,.07);
 }
 .search-wrap{flex:1;min-width:200px;max-width:380px;position:relative}
 .search-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
@@ -390,15 +412,19 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
    RESPONSIVE
 ════════════════════════════════════════════════════════════ */
 @media(max-width:768px){
-  .main-inner{padding:16px}
+  .table-area{padding:12px 14px}
   .header{padding:0 16px;height:58px}
   .login-card{padding:36px 24px 32px}
   .table-wrap,.pivot-wrap{display:none}
   .m-cards{display:flex}
+  .stats-bar{top:58px}
   .stats-bar .stat-num{font-size:26px}
   .stats-bar .stat-cell{padding:14px 12px}
+  .toolbar{top:128px}
   .search-wrap{max-width:none;flex:1}
   .hdr-title{font-size:14px}
+  .refresh-chip span{display:none} /* just show dot on mobile */
+  .refresh-chip{margin-left:0}
 }
 @media(max-width:480px){
   .stats-bar{grid-template-columns:1fr 1fr 1fr}
@@ -496,7 +522,13 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
             <option value="">All Evaluators</option>
           </select>
           <span class="count-chip" id="count-chip"></span>
+          <div class="refresh-chip">
+            <div class="refresh-dot" id="refresh-dot"></div>
+            <span>Auto-refresh in <span class="refresh-countdown" id="refresh-countdown">30</span>s</span>
+          </div>
         </div>
+
+        <div class="table-area">
 
         <!-- Desktop table -->
         <div class="table-wrap">
@@ -525,6 +557,8 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 
         <!-- Mobile cards -->
         <div class="m-cards" id="m-cards"></div>
+
+        </div><!-- /table-area -->
       </div>
 
       <!-- Pivot tab -->
@@ -616,6 +650,7 @@ function showErr(msg) {
 }
 function logout() {
   user = null; vehicles = [];
+  stopAutoRefresh();
   document.getElementById('main-page').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
   document.getElementById('mob').value = '';
@@ -643,6 +678,7 @@ async function loadVehicles() {
     buildEvalFilter();
     renderStats();
     filter();
+    startAutoRefresh();
   } catch(e) {
     toast('Network error. Please retry.', 'err');
   }
@@ -939,8 +975,106 @@ function switchTab(el) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// TOAST
+// AUTO-REFRESH  (30s silent sync — never wipes unsaved inputs)
 // ══════════════════════════════════════════════════════════════
+let _refreshTimer = null;
+let _countdownTimer = null;
+let _countdown = 30;
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  _countdown = 30;
+  updateCountdownUI();
+  // tick every second
+  _countdownTimer = setInterval(() => {
+    _countdown--;
+    updateCountdownUI();
+    if (_countdown <= 0) {
+      silentRefresh();
+      _countdown = 30;
+    }
+  }, 1000);
+}
+
+function stopAutoRefresh() {
+  clearInterval(_countdownTimer);
+  clearInterval(_refreshTimer);
+  _countdownTimer = null;
+}
+
+function updateCountdownUI() {
+  const el = document.getElementById('refresh-countdown');
+  if (el) el.textContent = _countdown;
+}
+
+async function silentRefresh() {
+  if (!user) return;
+  const dot = document.getElementById('refresh-dot');
+  if (dot) dot.className = 'refresh-dot syncing';
+  try {
+    const res = await apiGet({ action:'vehicles', name:user.name, role:user.role });
+    if (!res.success) return;
+
+    // Collect which rows currently have unsaved typed input
+    const dirtyRows = new Set(
+      vehicles
+        .filter(v => {
+          const tvEl = document.getElementById('tv-' + v.rowIndex);
+          const exEl = document.getElementById('ex-' + v.rowIndex);
+          const savedTv = String(v.tvscPrice || '');
+          const savedEx = String(v.expectedPrice || '');
+          return (tvEl && tvEl.value !== savedTv) || (exEl && exEl.value !== savedEx);
+        })
+        .map(v => v.rowIndex)
+    );
+
+    // Update vehicles array and only refresh UI for non-dirty rows
+    res.data.forEach(fresh => {
+      const idx = vehicles.findIndex(v => v.rowIndex === fresh.rowIndex);
+      if (idx !== -1) {
+        const old = vehicles[idx];
+        vehicles[idx] = fresh;
+        // If this row has unsaved edits — preserve input values
+        if (dirtyRows.has(fresh.rowIndex)) {
+          vehicles[idx].tvscPrice    = old.tvscPrice;
+          vehicles[idx].expectedPrice = old.expectedPrice;
+        }
+        // Update status badge in DOM silently
+        const stEl = document.getElementById('st-' + fresh.rowIndex);
+        if (stEl) {
+          const done = String(fresh.status).toLowerCase() === 'updated';
+          stEl.textContent = fresh.status || 'Pending';
+          stEl.className   = 'status ' + (done ? 'updated' : 'pending');
+        }
+        // Mobile card status
+        const mcSt = document.getElementById('mc-st-' + fresh.rowIndex);
+        if (mcSt) {
+          const done = String(fresh.status).toLowerCase() === 'updated';
+          mcSt.textContent = fresh.status || 'Pending';
+          mcSt.className   = 'status ' + (done ? 'updated' : 'pending');
+          const card = mcSt.closest('.m-card');
+          if (card) card.className = 'm-card ' + (done ? 'is-updated' : 'is-pending');
+        }
+      } else {
+        vehicles.push(fresh);
+      }
+    });
+
+    // Also fetch pivot if admin
+    if (user.role === 'Admin') {
+      const pres = await apiGet({ action:'pivot' });
+      if (pres.success) pivotData = pres.pivot;
+    }
+
+    renderStats();
+  } catch(_) {
+    // silent fail — don't disrupt user
+  } finally {
+    if (dot) dot.className = 'refresh-dot';
+  }
+}
+
+
 let _tt;
 function toast(msg, type='ok') {
   clearTimeout(_tt);
