@@ -9,22 +9,19 @@
 /* ── RESET ───────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  /* Brand palette — exact from Dealer Stock Status */
-  --navy:       #1e2d78;   /* primary navy — header, buttons       */
-  --navy-dark:  #172268;   /* deeper navy — hover states           */
-  --navy-light: #2d3e9e;   /* lighter navy — accents               */
-  --blue-grad1: #1e3a8a;   /* login bg gradient start              */
-  --blue-grad2: #2d3aaa;   /* login bg gradient end                */
-
-  --green:      #16a34a;   /* updated / positive                   */
-  --green-bg:   #f0fdf4;   /* card tint bg                         */
-  --green-bdr:  #bbf7d0;   /* card border                          */
-  --orange:     #ea580c;   /* pending / warning                    */
+  --navy:       #1e2d78;
+  --navy-dark:  #172268;
+  --navy-light: #2d3e9e;
+  --blue-grad1: #1e3a8a;
+  --blue-grad2: #2d3aaa;
+  --green:      #16a34a;
+  --green-bg:   #f0fdf4;
+  --green-bdr:  #bbf7d0;
+  --orange:     #ea580c;
   --orange-bg:  #fff7ed;
   --red:        #dc2626;
-  --blue-stat:  #1d4ed8;   /* total stat number                    */
-
-  --bg:         #f1f5f9;   /* page background                      */
+  --blue-stat:  #1d4ed8;
+  --bg:         #f1f5f9;
   --white:      #ffffff;
   --surface:    #ffffff;
   --border:     #e2e8f0;
@@ -33,11 +30,9 @@
   --text2:      #334155;
   --muted:      #64748b;
   --muted2:     #94a3b8;
-
   --radius:     12px;
   --radius-lg:  16px;
   --font:       'Inter', sans-serif;
-
   --shadow-sm:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
   --shadow:     0 4px 16px rgba(0,0,0,.10);
   --shadow-lg:  0 10px 40px rgba(0,0,0,.15);
@@ -52,447 +47,263 @@ input,select{font-family:var(--font)}
 #app{min-height:100vh;display:flex;flex-direction:column}
 
 /* ════════════════════════════════════════════════════════════
-   LOGIN PAGE
+   LOGIN
 ════════════════════════════════════════════════════════════ */
 #login-page{
   flex:1;display:flex;align-items:flex-start;justify-content:center;padding:48px 24px 24px;
-  background: linear-gradient(135deg, var(--blue-grad1) 0%, var(--blue-grad2) 100%);
+  background:linear-gradient(135deg,var(--blue-grad1) 0%,var(--blue-grad2) 100%);
   min-height:100vh;
 }
 .login-card{
-  background:var(--white);
-  border-radius:20px;
-  padding:48px 44px 44px;
-  width:100%;max-width:400px;
-  text-align:center;
-  box-shadow:var(--shadow-lg);
+  background:var(--white);border-radius:20px;padding:48px 44px 44px;
+  width:100%;max-width:400px;text-align:center;box-shadow:var(--shadow-lg);
 }
-.login-logo{
-  width:90px;height:90px;
-  border-radius:50%;
-  object-fit:cover;
-  margin:0 auto 22px;
-  display:block;
-  border:3px solid var(--border);
-  box-shadow:var(--shadow-sm);
-}
-.login-logo-fallback{
-  width:90px;height:90px;border-radius:50%;
-  background:var(--navy);display:flex;align-items:center;justify-content:center;
-  margin:0 auto 22px;font-size:34px;box-shadow:var(--shadow-sm);
-}
+.login-logo{width:90px;height:90px;border-radius:50%;object-fit:cover;margin:0 auto 22px;display:block;border:3px solid var(--border);box-shadow:var(--shadow-sm)}
+.login-logo-fallback{width:90px;height:90px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;margin:0 auto 22px;font-size:34px;box-shadow:var(--shadow-sm)}
 .login-card h1{font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:-.3px}
 .login-card .sub{color:var(--muted);font-size:14px;margin-bottom:32px;line-height:1.6}
-.field-label{display:block;font-size:11px;font-weight:600;color:var(--muted);
-  margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;text-align:left}
-.field-input{
-  width:100%;padding:13px 16px;
-  background:var(--white);border:1.5px solid var(--border2);border-radius:var(--radius);
-  color:var(--text);font-size:15px;font-weight:500;transition:.2s;margin-bottom:16px;
-}
+.field-label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;text-align:left}
+.field-input{width:100%;padding:13px 16px;background:var(--white);border:1.5px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:15px;font-weight:500;transition:.2s;margin-bottom:16px}
 .field-input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(30,45,120,.1)}
 .field-input::placeholder{color:var(--muted2)}
-.btn-signin{
-  width:100%;padding:14px;
-  background:var(--navy);color:var(--white);
-  font-weight:600;font-size:15px;border-radius:var(--radius);
-  letter-spacing:.2px;transition:.2s;
-}
+.btn-signin{width:100%;padding:14px;background:var(--navy);color:var(--white);font-weight:600;font-size:15px;border-radius:var(--radius);letter-spacing:.2px;transition:.2s}
 .btn-signin:hover:not(:disabled){background:var(--navy-dark);transform:translateY(-1px);box-shadow:var(--shadow)}
 .btn-signin:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.err-box{
-  color:var(--red);font-size:13px;margin-top:12px;
-  padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;
-  border-radius:8px;display:none;text-align:left;
-}
+.err-box{color:var(--red);font-size:13px;margin-top:12px;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;display:none;text-align:left}
 
 /* ════════════════════════════════════════════════════════════
    HEADER
 ════════════════════════════════════════════════════════════ */
 #main-page{flex:1;display:none;flex-direction:column}
 .header{
-  background:var(--navy);
-  padding:0 24px;height:62px;
+  background:var(--navy);padding:0 24px;height:62px;
   display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:100;
-  box-shadow:0 2px 8px rgba(0,0,0,.2);
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2);
 }
 .hdr-left{display:flex;align-items:center;gap:12px}
-.hdr-logo{
-  width:40px;height:40px;border-radius:50%;object-fit:cover;
-  border:2px solid rgba(255,255,255,.25);flex-shrink:0;
-}
-.hdr-logo-fallback{
-  width:40px;height:40px;border-radius:50%;
-  background:rgba(255,255,255,.15);
-  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
-}
+.hdr-logo{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.25);flex-shrink:0}
+.hdr-logo-fallback{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .hdr-title{font-size:16px;font-weight:700;color:var(--white);letter-spacing:-.2px}
 .hdr-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:1px;line-height:1.4}
 .hdr-right{display:flex;align-items:center;gap:10px}
-.badge-role{
-  font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.3px;
-}
+.badge-role{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.3px}
 .badge-role.evaluator{background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2)}
 .badge-role.admin{background:rgba(16,163,74,.25);color:#6ee7b7;border:1px solid rgba(16,163,74,.35)}
-.btn-signout{
-  color:rgba(255,255,255,.8);font-size:13px;font-weight:500;
-  padding:7px 16px;border:1.5px solid rgba(255,255,255,.25);
-  border-radius:8px;transition:.2s;background:transparent;
-}
+.btn-signout{color:rgba(255,255,255,.8);font-size:13px;font-weight:500;padding:7px 16px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;transition:.2s;background:transparent}
 .btn-signout:hover{color:var(--white);border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.08)}
 
 /* ════════════════════════════════════════════════════════════
-   STATS BAR  (white row with 3 columns, dividers)
+   STATS BAR
 ════════════════════════════════════════════════════════════ */
 .stats-bar{
-  background:var(--white);
-  display:grid;grid-template-columns:1fr 1fr 1fr;
-  border-bottom:1px solid var(--border);
-  position:sticky;top:62px;z-index:98;
-  box-shadow:0 2px 6px rgba(0,0,0,.06);
+  background:var(--white);display:grid;grid-template-columns:1fr 1fr 1fr;
+  border-bottom:1px solid var(--border);position:sticky;top:62px;z-index:98;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);transition:box-shadow .2s;
 }
-.stat-cell{
-  padding:18px 24px;text-align:center;
-  border-right:1px solid var(--border);
-}
+.stat-cell{padding:18px 24px;text-align:center;border-right:1px solid var(--border)}
 .stat-cell:last-child{border-right:none}
-.stat-num{font-size:32px;font-weight:800;line-height:1;letter-spacing:-1px}
+.stat-num{font-size:32px;font-weight:800;line-height:1;letter-spacing:-1px;transition:color .3s}
 .stat-num.blue{color:var(--blue-stat)}
 .stat-num.orange{color:var(--orange)}
 .stat-num.green{color:var(--green)}
-.stat-lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;
-  letter-spacing:.8px;margin-top:4px}
+.stat-lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:4px}
+/* filter-active tint on stats bar */
+.stats-bar.filter-active{background:#eff6ff;border-bottom-color:#bfdbfe}
 
-/* ── MAIN CONTENT ───────────────────────────────────────────── */
+/* ── MAIN CONTENT ─────────────────────────────────────────── */
 .main-inner{padding:0;width:100%}
 .table-area{padding:16px 20px}
 
-/* ── REFRESH INDICATOR ─────────────────────────────────────── */
-.refresh-chip{
-  display:flex;align-items:center;gap:6px;
-  font-size:11.5px;font-weight:500;color:var(--muted);
-  margin-left:auto;white-space:nowrap;
-}
-.refresh-dot{
-  width:7px;height:7px;border-radius:50%;
-  background:var(--green);flex-shrink:0;
-  animation:pulse-dot 2s ease-in-out infinite;
-}
-@keyframes pulse-dot{
-  0%,100%{opacity:1;transform:scale(1)}
-  50%{opacity:.4;transform:scale(.7)}
-}
+/* ── REFRESH CHIP ─────────────────────────────────────────── */
+.refresh-chip{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;color:var(--muted);margin-left:auto;white-space:nowrap}
+.refresh-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
 .refresh-dot.syncing{background:var(--orange);animation:spin-dot .6s linear infinite}
 @keyframes spin-dot{to{transform:rotate(360deg)}}
-.refresh-countdown{font-variant-numeric:tabular-nums}
 
 /* ── TABS ──────────────────────────────────────────────────── */
-.tabs{
-  display:flex;gap:2px;
-  background:var(--border);border-radius:10px;
-  padding:3px;margin:14px 20px;width:fit-content;
-}
-.tab{
-  padding:8px 22px;border-radius:8px;font-size:13px;font-weight:600;
-  color:var(--muted);transition:.18s;cursor:pointer;user-select:none;
-}
+.tabs{display:flex;gap:2px;background:var(--border);border-radius:10px;padding:3px;margin:14px 20px;width:fit-content}
+.tab{padding:8px 22px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);transition:.18s;cursor:pointer;user-select:none}
 .tab.active{background:var(--navy);color:var(--white);box-shadow:var(--shadow-sm)}
 .tab:hover:not(.active){color:var(--text)}
 
-/* ── SECTION LABEL ─────────────────────────────────────────── */
-.section-label{
-  font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;
-  letter-spacing:.8px;margin-bottom:12px;
-}
-
 /* ── TOOLBAR ────────────────────────────────────────────────── */
 .toolbar{
-  background:var(--white);border:1px solid var(--border);
-  border-radius:0;border-left:none;border-right:none;
-  padding:10px 20px;display:flex;gap:10px;margin-bottom:0;flex-wrap:wrap;align-items:center;
-  position:sticky;top:134px;z-index:97;
-  box-shadow:0 3px 8px rgba(0,0,0,.07);
+  background:var(--white);border:1px solid var(--border);border-radius:0;
+  border-left:none;border-right:none;padding:10px 20px;display:flex;gap:10px;
+  margin-bottom:0;flex-wrap:wrap;align-items:center;
+  position:sticky;top:134px;z-index:97;box-shadow:0 3px 8px rgba(0,0,0,.07);
 }
 .search-wrap{flex:1;min-width:200px;max-width:380px;position:relative}
 .search-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
-.search-wrap input{
-  width:100%;padding:9px 14px 9px 38px;
-  background:var(--bg);border:1.5px solid var(--border);border-radius:8px;
-  color:var(--text);font-size:13.5px;transition:.2s;
-}
+.search-wrap input{width:100%;padding:9px 14px 9px 38px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13.5px;transition:.2s}
 .search-wrap input:focus{outline:none;border-color:var(--navy);background:var(--white)}
 .search-wrap input::placeholder{color:var(--muted2)}
-.flt{
-  padding:9px 13px;background:var(--bg);border:1.5px solid var(--border);
-  border-radius:8px;color:var(--text);font-size:13.5px;cursor:pointer;transition:.2s;
-}
+.flt{padding:9px 13px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13.5px;cursor:pointer;transition:.2s}
 .flt:focus{outline:none;border-color:var(--navy)}
-.count-chip{
-  margin-left:auto;font-size:12px;font-weight:500;color:var(--muted);
+.count-chip{margin-left:auto;font-size:12px;font-weight:500;color:var(--muted)}
+
+/* ════════════════════════════════════════════════════════════
+   PIVOT DATE FILTER TOOLBAR
+════════════════════════════════════════════════════════════ */
+.pivot-toolbar{
+  background:var(--white);border-bottom:1px solid var(--border);
+  padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  position:sticky;top:134px;z-index:97;box-shadow:0 3px 8px rgba(0,0,0,.07);
 }
+.pivot-date-group{display:flex;align-items:center;gap:8px}
+.pivot-date-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
+.pivot-date-input{
+  padding:8px 12px;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:13px;font-weight:500;
+  cursor:pointer;transition:.2s;min-width:140px;
+}
+.pivot-date-input:focus{outline:none;border-color:var(--navy);background:var(--white)}
+.pivot-date-input.active{border-color:var(--navy);background:#eff6ff;color:var(--navy)}
+.btn-clear-date{
+  padding:7px 14px;background:transparent;border:1.5px solid var(--border2);
+  border-radius:8px;color:var(--muted);font-size:12px;font-weight:600;
+  transition:.2s;display:none;
+}
+.btn-clear-date.visible{display:inline-flex;align-items:center;gap:5px}
+.btn-clear-date:hover{border-color:var(--red);color:var(--red);background:#fef2f2}
+.pivot-filter-badge{
+  display:none;align-items:center;gap:6px;
+  background:#eff6ff;border:1px solid #bfdbfe;
+  border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--navy);
+}
+.pivot-filter-badge.visible{display:inline-flex}
+.pivot-filter-badge svg{flex-shrink:0}
+.pivot-row-count{margin-left:auto;font-size:12px;font-weight:500;color:var(--muted)}
+
+/* ── PIVOT TABLE AREA ─────────────────────────────────────── */
+.pivot-area{padding:16px 20px}
 
 /* ── TABLE ──────────────────────────────────────────────────── */
-.table-wrap{
-  background:var(--white);overflow-x:auto;
-  border-radius:var(--radius-lg);border:1px solid var(--border);
-  box-shadow:var(--shadow-sm);
-}
+.table-wrap{background:var(--white);overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
 table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
 thead{background:#f8fafc}
-th{
-  padding:11px 10px;text-align:left;
-  font-size:10px;font-weight:700;color:var(--navy);
-  text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;
-  border-bottom:2px solid var(--border);
-}
-td{
-  padding:10px 10px;border-top:1px solid var(--border);
-  vertical-align:top;color:var(--text2);
-  /* default: allow wrap, clip overflow */
-  word-break:break-word;overflow-wrap:break-word;
-}
+th{padding:11px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;border-bottom:2px solid var(--border)}
+td{padding:10px 10px;border-top:1px solid var(--border);vertical-align:top;color:var(--text2);word-break:break-word;overflow-wrap:break-word}
 tr:hover td{background:#f8fafc}
-/* alternating row tint */
 tbody tr:nth-child(even) td{background:#fafbfd}
 tbody tr:nth-child(even):hover td{background:#f8fafc}
 
-/* ── COLUMN WIDTHS ─────────────────────────────────────────── */
-table colgroup col:nth-child(1) {width:38px}   /* #          — fixed  */
-table colgroup col:nth-child(2) {width:94px}   /* Reg No.    — fixed  */
-table colgroup col:nth-child(3) {width:15%}    /* Make/Model — wrap   */
-table colgroup col:nth-child(4) {width:46px}   /* Year       — fixed  */
-table colgroup col:nth-child(5) {width:80px}   /* Fuel/Trans — wrap   */
-table colgroup col:nth-child(6) {width:13%}    /* Customer   — wrap   */
-table colgroup col:nth-child(7) {width:12%}    /* Evaluator  — wrap   */
-table colgroup col:nth-child(8) {width:80px}   /* Odometer   — fixed  */
-table colgroup col:nth-child(9) {width:104px}  /* TVSC       — fixed  */
-table colgroup col:nth-child(10){width:104px}  /* Expected   — fixed  */
-table colgroup col:nth-child(11){width:80px}   /* Status     — fixed  */
-table colgroup col:nth-child(12){width:64px}   /* Action     — fixed  */
+table colgroup col:nth-child(1){width:38px}
+table colgroup col:nth-child(2){width:94px}
+table colgroup col:nth-child(3){width:15%}
+table colgroup col:nth-child(4){width:46px}
+table colgroup col:nth-child(5){width:80px}
+table colgroup col:nth-child(6){width:13%}
+table colgroup col:nth-child(7){width:12%}
+table colgroup col:nth-child(8){width:80px}
+table colgroup col:nth-child(9){width:104px}
+table colgroup col:nth-child(10){width:104px}
+table colgroup col:nth-child(11){width:80px}
+table colgroup col:nth-child(12){width:64px}
 
-/* ── FIXED (no-wrap) columns helper ──────────────────────────  */
 td.td-fixed{white-space:nowrap;word-break:normal;overflow-wrap:normal}
 td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--muted);font-size:12px}
 
-/* ── CELL CONTENT STYLES ───────────────────────────────────── */
-.reg{
-  font-weight:700;font-size:12.5px;color:var(--navy);
-  white-space:nowrap;display:inline-block;
-}
-/* Make / Model cell */
+.reg{font-weight:700;font-size:12.5px;color:var(--navy);white-space:nowrap;display:inline-block}
 .model-name{font-weight:600;font-size:12.5px;color:var(--text);line-height:1.35}
-.color-tag{
-  display:inline-block;margin-top:3px;
-  font-size:10px;color:var(--muted);
-  background:var(--bg);border:1px solid var(--border);
-  padding:1px 6px;border-radius:4px;
-}
-/* Customer cell */
-.cust-name{
-  font-size:12.5px;font-weight:600;color:var(--blue-stat);
-  line-height:1.35;
-}
-/* Evaluator cell */
+.color-tag{display:inline-block;margin-top:3px;font-size:10px;color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:1px 6px;border-radius:4px}
+.cust-name{font-size:12.5px;font-weight:600;color:var(--blue-stat);line-height:1.35}
 .eval-name{font-size:12.5px;font-weight:500;color:var(--text2);line-height:1.35}
 .sub-text{font-size:10.5px;color:var(--muted);margin-top:1px}
-.yr{
-  background:var(--bg);color:var(--muted);font-size:10px;
-  padding:2px 6px;border-radius:5px;border:1px solid var(--border);
-  white-space:nowrap;display:inline-block;
-}
+.yr{background:var(--bg);color:var(--muted);font-size:10px;padding:2px 6px;border-radius:5px;border:1px solid var(--border);white-space:nowrap;display:inline-block}
 
 /* ── STATUS PILLS ──────────────────────────────────────────── */
-.status{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:11px;font-weight:600;padding:4px 10px;
-  border-radius:20px;letter-spacing:.2px;white-space:nowrap;
-}
+.status{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;letter-spacing:.2px;white-space:nowrap}
 .status::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 .status.updated{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
 .status.pending{background:#fff7ed;color:var(--orange);border:1px solid #fed7aa}
 
 /* ── PRICE INPUTS ──────────────────────────────────────────── */
-.pi{
-  width:84px;padding:5px 7px;
-  background:var(--bg);border:1.5px solid var(--border);border-radius:6px;
-  color:var(--text);font-size:12px;transition:.2s;
-}
+.pi{width:84px;padding:5px 7px;background:var(--bg);border:1.5px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;transition:.2s}
 .pi:focus{outline:none;border-color:var(--navy);background:var(--white);box-shadow:0 0 0 3px rgba(30,45,120,.08)}
 .pi.filled{border-color:#bbf7d0;background:#f0fdf4}
 .pi.editing{border-color:var(--navy) !important;background:var(--white) !important}
-.pi.input-err{border-color:var(--red) !important;background:#fef2f2 !important;animation:shake .3s ease;}
+.pi.input-err{border-color:var(--red) !important;background:#fef2f2 !important;animation:shake .3s ease}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 .price-cell{display:flex;align-items:center;gap:5px}
 .rupee{color:var(--muted);font-size:12px}
 .start-val{font-weight:700;color:var(--green);font-size:13px}
 .start-val.empty{color:var(--muted);font-weight:400}
-/* read-only price display in table */
 .cprice{font-weight:600;font-size:12.5px;color:var(--navy)}
 .cprice.empty{color:var(--muted2);font-weight:400;font-size:12px}
 .lock-badge{font-size:14px;cursor:not-allowed;opacity:.6;display:inline-block}
-.edit-hint{
-  font-size:11px;font-weight:600;color:var(--navy);
-  padding:3px 8px;border-radius:6px;border:1.5px solid var(--navy);
-  cursor:pointer;display:inline-block;transition:.15s;
-}
+.edit-hint{font-size:11px;font-weight:600;color:var(--navy);padding:3px 8px;border-radius:6px;border:1.5px solid var(--navy);cursor:pointer;display:inline-block;transition:.15s}
 .edit-hint:hover{background:var(--navy);color:var(--white)}
 .edit-hint.pending-hint{color:var(--orange);border-color:var(--orange)}
 .edit-hint.pending-hint:hover{background:var(--orange);color:var(--white)}
 
-/* ── SAVE / EDIT BUTTONS ────────────────────────────────────── */
-.btn-save{
-  padding:5px 11px;background:var(--navy);color:var(--white);
-  font-weight:600;font-size:11.5px;border-radius:7px;
-  white-space:nowrap;transition:.2s;letter-spacing:.1px;
-}
+/* ── SAVE/EDIT BUTTONS ─────────────────────────────────────── */
+.btn-save{padding:5px 11px;background:var(--navy);color:var(--white);font-weight:600;font-size:11.5px;border-radius:7px;white-space:nowrap;transition:.2s;letter-spacing:.1px}
 .btn-save:hover:not(:disabled){background:var(--navy-dark)}
 .btn-save:disabled{opacity:.4;cursor:not-allowed}
 .btn-save.done{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
-.btn-edit{
-  padding:5px 11px;background:transparent;color:var(--navy);
-  font-weight:600;font-size:11.5px;border-radius:7px;
-  border:1.5px solid var(--navy);white-space:nowrap;transition:.2s;
-}
+.btn-edit{padding:5px 11px;background:transparent;color:var(--navy);font-weight:600;font-size:11.5px;border-radius:7px;border:1.5px solid var(--navy);white-space:nowrap;transition:.2s}
 .btn-edit:hover{background:var(--navy);color:var(--white)}
 
-/* ── MOBILE INDEX CIRCLE ────────────────────────────────────── */
-.idx-circle{
-  width:26px;height:26px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:700;margin-top:6px;
-  flex-shrink:0;
-}
+/* ── MOBILE INDEX CIRCLE ─────────────────────────────────── */
+.idx-circle{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:6px;flex-shrink:0}
 .idx-circle.updated{background:#dcfce7;color:#15803d;border:1.5px solid #bbf7d0}
 .idx-circle.pending{background:#fff7ed;color:var(--orange);border:1.5px solid #fed7aa}
 
-/* ── CARD PRICE SUMMARY STRIP ──────────────────────────────── */
-.card-price-strip{
-  display:flex;gap:10px;padding:10px 0 0;
-  border-top:1px solid var(--border);margin-top:10px;
-}
+.card-price-strip{display:flex;gap:10px;padding:10px 0 0;border-top:1px solid var(--border);margin-top:10px}
 .card-price-item{flex:1;text-align:center}
-.card-price-item label{
-  display:block;font-size:9.5px;font-weight:700;color:var(--muted);
-  text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;
-}
+.card-price-item label{display:block;font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
 .card-price-item .cpv{font-size:13px;font-weight:700;color:var(--navy)}
 .card-price-item .cpv.empty{color:var(--muted2);font-weight:400;font-size:12px}
-.card-tap-hint{
-  display:flex;align-items:center;justify-content:center;gap:5px;
-  font-size:11px;color:var(--muted);margin-top:8px;
-  font-weight:500;transition:color .3s;
-}
+.card-tap-hint{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;color:var(--muted);margin-top:8px;font-weight:500;transition:color .3s}
 .card-tap-hint.done{color:var(--green)}
 .card-tap-hint.edit-green{color:var(--green)}
 .card-tap-hint.edit-amber{color:var(--orange)}
 .card-tap-hint.edit-red{color:var(--red);animation:pulse-hint 1s ease-in-out infinite}
 .card-tap-hint.locked{color:var(--muted);font-style:italic}
 @keyframes pulse-hint{0%,100%{opacity:1}50%{opacity:.5}}
-.hint-timer{
-  font-weight:800;font-variant-numeric:tabular-nums;
-  background:currentColor;color:white;
-  padding:1px 6px;border-radius:4px;font-size:10.5px;
-  opacity:1;-webkit-text-fill-color:white;
-}
+.hint-timer{font-weight:800;font-variant-numeric:tabular-nums;background:currentColor;color:white;padding:1px 6px;border-radius:4px;font-size:10.5px;opacity:1;-webkit-text-fill-color:white}
 
 /* ════════════════════════════════════════════════════════════
-   BOTTOM SHEET MODAL
+   BOTTOM SHEET
 ════════════════════════════════════════════════════════════ */
-#sheet-overlay{
-  display:none;position:fixed;inset:0;z-index:500;
-  background:rgba(0,0,0,.45);
-  animation:fadeIn .2s ease;
-}
+#sheet-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);animation:fadeIn .2s ease}
 #sheet-overlay.open{display:block}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-
-#bottom-sheet{
-  position:fixed;bottom:0;left:0;right:0;z-index:501;
-  background:var(--white);
-  border-radius:20px 20px 0 0;
-  padding:0 0 env(safe-area-inset-bottom,0);
-  transform:translateY(100%);
-  transition:transform .32s cubic-bezier(.32,1,.23,1);
-  box-shadow:0 -8px 32px rgba(0,0,0,.18);
-  max-height:92vh;overflow-y:auto;
-}
+#bottom-sheet{position:fixed;bottom:0;left:0;right:0;z-index:501;background:var(--white);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom,0);transform:translateY(100%);transition:transform .32s cubic-bezier(.32,1,.23,1);box-shadow:0 -8px 32px rgba(0,0,0,.18);max-height:92vh;overflow-y:auto}
 #bottom-sheet.open{transform:translateY(0)}
-
-.sheet-handle{
-  width:40px;height:4px;background:var(--border2);
-  border-radius:4px;margin:12px auto 0;
-}
-.sheet-header{
-  padding:16px 20px 12px;
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:flex-start;justify-content:space-between;
-}
+.sheet-handle{width:40px;height:4px;background:var(--border2);border-radius:4px;margin:12px auto 0}
+.sheet-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between}
 .sheet-reg{font-family:inherit;font-size:18px;font-weight:800;color:var(--navy);letter-spacing:-.3px}
 .sheet-model{font-size:13px;font-weight:500;color:var(--muted);margin-top:2px}
-.sheet-close{
-  width:32px;height:32px;border-radius:50%;background:var(--bg);
-  border:1px solid var(--border);display:flex;align-items:center;
-  justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;
-  color:var(--muted);transition:.15s;
-}
+.sheet-close{width:32px;height:32px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;color:var(--muted);transition:.15s}
 .sheet-close:hover{background:var(--border);color:var(--text)}
 .sheet-body{padding:20px}
-
 .sheet-field{margin-bottom:16px}
-.sheet-field label{
-  display:block;font-size:11px;font-weight:700;color:var(--muted);
-  text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;
-}
-.sheet-input{
-  width:100%;padding:13px 16px;
-  background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);
-  color:var(--text);font-size:16px;font-weight:500;transition:.2s;
-}
+.sheet-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px}
+.sheet-input{width:100%;padding:13px 16px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:16px;font-weight:500;transition:.2s}
 .sheet-input:focus{outline:none;border-color:var(--navy);background:var(--white);box-shadow:0 0 0 3px rgba(30,45,120,.08)}
 .sheet-input.filled{border-color:#bbf7d0;background:#f0fdf4}
 .sheet-input.editing{border-color:var(--navy) !important;background:var(--white) !important}
 .sheet-input.err{border-color:var(--red) !important;background:#fef2f2 !important;animation:shake .3s ease}
 .sheet-input:disabled{opacity:.7;cursor:default}
-
-.sheet-start{
-  background:var(--green-bg);border:1px solid var(--green-bdr);
-  border-radius:var(--radius);padding:12px 16px;
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:20px;
-}
+.sheet-start{background:var(--green-bg);border:1px solid var(--green-bdr);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
 .sheet-start-label{font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.6px}
 .sheet-start-val{font-size:18px;font-weight:800;color:var(--green)}
-
 .sheet-btn-row{display:flex;gap:10px}
-.btn-sheet-save{
-  flex:1;padding:15px;background:var(--navy);color:var(--white);
-  font-weight:700;font-size:15px;border-radius:var(--radius);
-  transition:.2s;letter-spacing:.2px;
-}
+.btn-sheet-save{flex:1;padding:15px;background:var(--navy);color:var(--white);font-weight:700;font-size:15px;border-radius:var(--radius);transition:.2s;letter-spacing:.2px}
 .btn-sheet-save:hover:not(:disabled){background:var(--navy-dark)}
 .btn-sheet-save:disabled{opacity:.4;cursor:not-allowed}
-.btn-sheet-edit{
-  padding:15px 20px;background:transparent;color:var(--navy);
-  font-weight:700;font-size:15px;border-radius:var(--radius);
-  border:2px solid var(--navy);transition:.2s;
-}
+.btn-sheet-edit{padding:15px 20px;background:transparent;color:var(--navy);font-weight:700;font-size:15px;border-radius:var(--radius);border:2px solid var(--navy);transition:.2s}
 .btn-sheet-edit:hover{background:var(--navy);color:var(--white)}
-.sheet-validation-msg{
-  font-size:12px;color:var(--red);margin-top:8px;
-  padding:8px 12px;background:#fef2f2;border:1px solid #fecaca;
-  border-radius:8px;display:none;
-}
+.sheet-validation-msg{font-size:12px;color:var(--red);margin-top:8px;padding:8px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;display:none}
 
 /* ════════════════════════════════════════════════════════════
-   MOBILE CARDS
+   MOBILE VEHICLE CARDS
 ════════════════════════════════════════════════════════════ */
 .m-cards{display:none;flex-direction:column;gap:12px}
-.m-card{
-  background:var(--white);border:1px solid var(--border);
-  border-radius:var(--radius-lg);overflow:hidden;
-  box-shadow:var(--shadow-sm);
-}
+.m-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm)}
 .m-card.is-updated{border-left:4px solid var(--green);background:var(--green-bg)}
 .m-card.is-pending{border-left:4px solid var(--orange)}
 .m-card-body{padding:16px}
@@ -501,52 +312,80 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .m-card-model{font-weight:600;font-size:14px;color:var(--text);margin-top:2px}
 .m-card-meta{font-size:12px;color:var(--muted);margin-top:3px}
 .m-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
-.m-field label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;
-  letter-spacing:.5px;display:block;margin-bottom:4px}
+.m-field label{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
 .m-field span{font-size:13px;font-weight:500;color:var(--text2)}
 
 /* ════════════════════════════════════════════════════════════
-   PIVOT TABLE
+   PIVOT TABLE (desktop)
 ════════════════════════════════════════════════════════════ */
-.pivot-wrap{
-  background:var(--white);overflow-x:auto;
-  border-radius:var(--radius-lg);border:1px solid var(--border);
-  box-shadow:var(--shadow-sm);
-}
+.pivot-wrap{background:var(--white);overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
 .ptable{width:100%;border-collapse:collapse;font-size:14px}
 .ptable thead{background:#f8fafc}
-.ptable th{
-  padding:12px 18px;text-align:left;
-  font-size:10.5px;font-weight:700;color:var(--navy);
-  text-transform:uppercase;letter-spacing:.7px;
-  border-bottom:2px solid var(--border);
-}
+.ptable th{padding:12px 18px;text-align:left;font-size:10.5px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.7px;border-bottom:2px solid var(--border)}
 .ptable td{padding:14px 18px;border-top:1px solid var(--border);color:var(--text2)}
 .ptable tr:hover td{background:#f8fafc}
+/* Totals footer row */
+.ptable tfoot td{padding:13px 18px;border-top:2px solid var(--border);font-weight:700;background:#f8fafc}
+.ptable tfoot .p-name{color:var(--navy);font-size:13px}
 .p-name{font-weight:600;font-size:14px;color:var(--text)}
 .pbar{height:6px;background:var(--border);border-radius:4px;overflow:hidden;width:160px;margin-top:6px}
 .pbar-fill{height:100%;border-radius:4px;transition:.6s;background:linear-gradient(90deg,var(--navy-light),var(--green))}
 .pct{font-weight:700;font-size:14px}
 
-/* ── LOADER / EMPTY ─────────────────────────────────────────── */
-.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:64px;color:var(--muted);gap:14px}
-.spin{
-  width:32px;height:32px;border:3px solid var(--border);
-  border-top-color:var(--navy);border-radius:50%;
-  animation:rot .7s linear infinite;
+/* ════════════════════════════════════════════════════════════
+   PIVOT MOBILE CARDS  ← NEW
+════════════════════════════════════════════════════════════ */
+.pivot-m-cards{display:none;flex-direction:column;gap:10px}
+.pivot-m-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);
 }
+.pivot-m-card-header{
+  padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid var(--border);background:#f8fafc;
+}
+.pivot-m-name{font-size:15px;font-weight:700;color:var(--text)}
+.pivot-m-pct-badge{
+  font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;
+}
+.pivot-m-body{padding:14px 16px}
+.pivot-m-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-bottom:12px}
+.pivot-m-stat{text-align:center;padding:8px 4px;position:relative}
+.pivot-m-stat+.pivot-m-stat::before{content:'';position:absolute;left:0;top:15%;bottom:15%;width:1px;background:var(--border)}
+.pivot-m-stat-num{font-size:22px;font-weight:800;line-height:1;letter-spacing:-1px}
+.pivot-m-stat-num.blue{color:var(--blue-stat)}
+.pivot-m-stat-num.green{color:var(--green)}
+.pivot-m-stat-num.orange{color:var(--orange)}
+.pivot-m-stat-lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:3px}
+.pivot-m-pbar-row{display:flex;align-items:center;gap:10px}
+.pivot-m-pbar{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden}
+.pivot-m-pbar-fill{height:100%;border-radius:4px;transition:.6s;background:linear-gradient(90deg,var(--navy-light),var(--green))}
+.pivot-m-pbar-label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
+
+/* Totals summary card */
+.pivot-totals-card{
+  background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);
+  border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;
+}
+.pivot-totals-card .ptc-item{text-align:center;position:relative}
+.pivot-totals-card .ptc-item+.ptc-item::before{content:'';position:absolute;left:0;top:10%;bottom:10%;width:1px;background:rgba(255,255,255,.2)}
+.pivot-totals-card .ptc-num{font-size:28px;font-weight:800;color:var(--white);line-height:1;letter-spacing:-1px}
+.pivot-totals-card .ptc-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;margin-top:4px;color:rgba(255,255,255,.7)}
+
+/* No-data state for pivot */
+.pivot-empty{padding:48px;text-align:center;color:var(--muted)}
+.pivot-empty-ico{font-size:36px;margin-bottom:10px;opacity:.5}
+
+/* ── LOADER / EMPTY ─────────────────────────────────────────── */
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px;color:var(--muted);gap:14px}
+.spin{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:rot .7s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
 .empty{padding:60px;text-align:center;color:var(--muted)}
 .empty-ico{font-size:36px;margin-bottom:10px;opacity:.5}
 
 /* ── TOAST ──────────────────────────────────────────────────── */
-#toast{
-  position:fixed;bottom:24px;right:24px;z-index:9999;
-  padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;
-  opacity:0;transform:translateY(60px);transition:.3s;pointer-events:none;
-  box-shadow:var(--shadow);
-}
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;transform:translateY(60px);transition:.3s;pointer-events:none;box-shadow:var(--shadow)}
 #toast.show{opacity:1;transform:translateY(0)}
 #toast.ok{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
 #toast.err{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
@@ -556,11 +395,10 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 ════════════════════════════════════════════════════════════ */
 @media(max-width:768px){
   .table-area{padding:10px 12px}
-  .header{
-    padding:0 12px;height:auto;min-height:52px;
-    padding-top:8px;padding-bottom:8px;
-    align-items:flex-start;
-  }
+  .pivot-area{padding:10px 12px}
+
+  /* Header */
+  .header{padding:0 12px;height:auto;min-height:52px;padding-top:8px;padding-bottom:8px;align-items:flex-start}
   .hdr-left{align-items:flex-start;gap:10px}
   .hdr-logo{width:34px;height:34px;margin-top:2px}
   .hdr-title{font-size:13px}
@@ -569,26 +407,44 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
   .btn-signout{padding:5px 10px;font-size:12px}
   .badge-role{display:none}
 
-  /* Stats bar — compact */
+  /* Stats bar */
   .stats-bar{position:sticky;z-index:98;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-  .stats-bar .stat-cell{padding:10px 8px}
+  .stats-bar .stat-cell{padding:10px 6px}
   .stats-bar .stat-num{font-size:22px;letter-spacing:-.5px}
-  .stats-bar .stat-lbl{font-size:10px;letter-spacing:.5px;margin-top:2px}
+  .stats-bar .stat-lbl{font-size:9.5px;letter-spacing:.4px;margin-top:2px}
 
-  /* Toolbar — compact, sticky */
-  .toolbar{position:sticky;z-index:97;padding:8px 12px;gap:8px}
+  /* Tabs */
+  .tabs{margin:10px 12px}
+  .tab{padding:7px 14px;font-size:12px}
+
+  /* Toolbars */
+  .toolbar{position:sticky;z-index:97;padding:8px 12px;gap:8px;top:var(--toolbar-top,134px)}
+  .pivot-toolbar{position:sticky;z-index:97;padding:8px 12px;gap:8px;top:var(--toolbar-top,134px);flex-wrap:wrap}
+  .pivot-date-group{flex-wrap:wrap;gap:6px}
+  .pivot-date-label{font-size:10px}
+  .pivot-date-input{font-size:12px;padding:7px 10px;min-width:130px}
   .search-wrap{max-width:none;flex:1}
   .refresh-chip{margin-left:0;font-size:11px}
-  .refresh-chip span{display:inline}
 
+  /* Hide desktop elements, show mobile */
   .table-wrap,.pivot-wrap{display:none}
   .m-cards{display:flex}
+  .pivot-m-cards{display:flex}
+  .pivot-totals-card{display:grid} /* always visible */
+
+  /* Pivot toolbar row count */
+  .pivot-row-count{margin-left:0;width:100%}
 }
 
 @media(max-width:480px){
   .stats-bar{grid-template-columns:1fr 1fr 1fr}
-  .stats-bar .stat-num{font-size:20px}
-  .login-card h1{font-size:20px}
+  .stats-bar .stat-num{font-size:19px}
+  .stats-bar .stat-lbl{font-size:9px;letter-spacing:.2px}
+  .login-card{padding:32px 20px 28px}
+  .login-card h1{font-size:18px}
+  .tabs{margin:8px 12px}
+  .tab{padding:6px 12px;font-size:11.5px}
+  .pivot-totals-card .ptc-num{font-size:24px}
 }
 </style>
 </head>
@@ -609,113 +465,113 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
   <div class="sheet-body">
     <div class="sheet-field">
       <label>TVSC Price ₹ <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(Market price)</span></label>
-      <input class="sheet-input" type="number" id="sh-tv" placeholder="Enter market price" min="0"
-             oninput="sheetPreview()"/>
+      <input class="sheet-input" type="number" id="sh-tv" placeholder="Enter market price" min="0" oninput="sheetPreview()"/>
     </div>
     <div class="sheet-field">
       <label>Expected Price ₹ <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(Reserved price)</span></label>
-      <input class="sheet-input" type="number" id="sh-ex" placeholder="Enter reserved price" min="0"
-             oninput="sheetPreview()"/>
+      <input class="sheet-input" type="number" id="sh-ex" placeholder="Enter reserved price" min="0" oninput="sheetPreview()"/>
+    </div>
+    <div class="sheet-start" id="sh-start-box" style="display:none">
+      <div class="sheet-start-label">Start Price</div>
+      <div class="sheet-start-val" id="sh-start-val">—</div>
     </div>
     <div class="sheet-validation-msg" id="sh-err"></div>
     <div class="sheet-btn-row" id="sh-btn-row"></div>
   </div>
 </div>
 
-  <!-- ══ LOGIN ═════════════════════════════════════════════════ -->
-  <div id="login-page" style="display:flex;flex:1">
-    <div class="login-card">
-      <img class="login-logo" id="login-logo-img"
+<!-- ══ LOGIN ═════════════════════════════════════════════════ -->
+<div id="login-page" style="display:flex;flex:1">
+  <div class="login-card">
+    <img class="login-logo" id="login-logo-img"
+         src="https://drive.google.com/thumbnail?id=1FREFFtAgLbSXJfKGIR_f1OxGt5qR6vMX&sz=w200"
+         alt="TVS Certified"
+         onerror="this.style.display='none';document.getElementById('login-logo-fallback').style.display='flex'"/>
+    <div class="login-logo-fallback" id="login-logo-fallback" style="display:none">🚗</div>
+    <h1>Auction Vehicles Price Picker</h1>
+    <p class="sub">Enter your registered mobile number to view<br/>and update your assigned vehicles.</p>
+    <label class="field-label">Mobile Number</label>
+    <input class="field-input" type="tel" id="mob" maxlength="10"
+           placeholder="Enter 10-digit mobile number"
+           onkeydown="if(event.key==='Enter')login()"
+           oninput="this.style.background='';this.style.borderColor=''"/>
+    <button class="btn-signin" id="login-btn" onclick="login()">Sign In</button>
+    <div class="err-box" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══════════════════════════════════════════════ -->
+<div id="main-page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="hdr-left">
+      <img class="hdr-logo" id="hdr-logo-img"
            src="https://drive.google.com/thumbnail?id=1FREFFtAgLbSXJfKGIR_f1OxGt5qR6vMX&sz=w200"
            alt="TVS Certified"
-           onerror="this.style.display='none';document.getElementById('login-logo-fallback').style.display='flex'"/>
-      <div class="login-logo-fallback" id="login-logo-fallback" style="display:none">🚗</div>
-      <h1>Auction Vehicles Price Picker</h1>
-      <p class="sub">Enter your registered mobile number to view<br/>and update your assigned vehicles.</p>
-      <label class="field-label">Mobile Number</label>
-      <input class="field-input" type="tel" id="mob" maxlength="10"
-             placeholder="Enter 10-digit mobile number"
-             onkeydown="if(event.key==='Enter')login()"
-             oninput="this.style.background='';this.style.borderColor=''"/>
-      <button class="btn-signin" id="login-btn" onclick="login()">Sign In</button>
-      <div class="err-box" id="login-err"></div>
+           onerror="this.style.display='none';document.getElementById('hdr-logo-fallback').style.display='flex'"/>
+      <div class="hdr-logo-fallback" id="hdr-logo-fallback" style="display:none">🚗</div>
+      <div>
+        <div class="hdr-title">Auction Vehicles Price Picker</div>
+        <div class="hdr-sub" id="hdr-sub">Welcome</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <span class="badge-role" id="h-role"></span>
+      <button class="btn-signout" onclick="logout()">Sign out</button>
     </div>
   </div>
 
-  <!-- ══ MAIN APP ══════════════════════════════════════════════ -->
-  <div id="main-page">
+  <!-- Stats bar -->
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-cell">
+      <div class="stat-num blue" id="stat-total">—</div>
+      <div class="stat-lbl" id="stat-total-lbl">Total</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num orange" id="stat-pending">—</div>
+      <div class="stat-lbl" id="stat-pending-lbl">Pending</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num green" id="stat-updated">—</div>
+      <div class="stat-lbl" id="stat-updated-lbl">Updated</div>
+    </div>
+  </div>
 
-    <!-- Header -->
-    <div class="header">
-      <div class="hdr-left">
-        <img class="hdr-logo" id="hdr-logo-img"
-             src="https://drive.google.com/thumbnail?id=1FREFFtAgLbSXJfKGIR_f1OxGt5qR6vMX&sz=w200"
-             alt="TVS Certified"
-             onerror="this.style.display='none';document.getElementById('hdr-logo-fallback').style.display='flex'"/>
-        <div class="hdr-logo-fallback" id="hdr-logo-fallback" style="display:none">🚗</div>
-        <div>
-          <div class="hdr-title">Auction Vehicles Price Picker</div>
-          <div class="hdr-sub" id="hdr-sub">Welcome</div>
-        </div>
-      </div>
-      <div class="hdr-right">
-        <span class="badge-role" id="h-role"></span>
-        <button class="btn-signout" onclick="logout()">Sign out</button>
-      </div>
+  <!-- Page content -->
+  <div class="main-inner">
+
+    <!-- Admin tabs -->
+    <div class="tabs" id="admin-tabs" style="display:none">
+      <div class="tab active" data-tab="vehicles" onclick="switchTab(this)">🚘 Vehicles</div>
+      <div class="tab" data-tab="pivot" onclick="switchTab(this)">📊 Evaluator Summary</div>
     </div>
 
-    <!-- Stats bar -->
-    <div class="stats-bar" id="stats-bar">
-      <div class="stat-cell">
-        <div class="stat-num blue" id="stat-total">—</div>
-        <div class="stat-lbl">Total</div>
-      </div>
-      <div class="stat-cell">
-        <div class="stat-num orange" id="stat-pending">—</div>
-        <div class="stat-lbl">Pending</div>
-      </div>
-      <div class="stat-cell">
-        <div class="stat-num green" id="stat-updated">—</div>
-        <div class="stat-lbl">Updated</div>
-      </div>
-    </div>
-
-    <!-- Page content -->
-    <div class="main-inner">
-
-      <!-- Admin tabs -->
-      <div class="tabs" id="admin-tabs" style="display:none">
-        <div class="tab active" data-tab="vehicles" onclick="switchTab(this)">🚘 Vehicles</div>
-        <div class="tab" data-tab="pivot" onclick="switchTab(this)">📊 Evaluator Summary</div>
-      </div>
-
-      <!-- Vehicles tab -->
-      <div id="tab-vehicles">
-
-        <div class="toolbar">
-          <div class="search-wrap">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            </svg>
-            <input type="text" id="q" placeholder="Search reg no., model, customer…" oninput="filter()"/>
-          </div>
-          <select class="flt" id="st-flt" onchange="filter()">
-            <option value="">All Statuses</option>
-            <option value="Updated">✅ Updated</option>
-            <option value="Pending" selected>⏳ Pending</option>
-          </select>
-          <select class="flt" id="ev-flt" onchange="filter()" style="display:none">
-            <option value="">All Evaluators</option>
-          </select>
-          <span class="count-chip" id="count-chip"></span>
-          <div class="refresh-chip">
-            <div class="refresh-dot" id="refresh-dot"></div>
-            <span>Auto-refresh in <span class="refresh-countdown" id="refresh-countdown">30</span>s</span>
-          </div>
+    <!-- ══ VEHICLES TAB ══════════════════════════════════════ -->
+    <div id="tab-vehicles">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="q" placeholder="Search reg no., model, customer…" oninput="filter()"/>
         </div>
+        <select class="flt" id="st-flt" onchange="filter()">
+          <option value="">All Statuses</option>
+          <option value="Updated">✅ Updated</option>
+          <option value="Pending" selected>⏳ Pending</option>
+        </select>
+        <select class="flt" id="ev-flt" onchange="filter()" style="display:none">
+          <option value="">All Evaluators</option>
+        </select>
+        <span class="count-chip" id="count-chip"></span>
+        <div class="refresh-chip">
+          <div class="refresh-dot" id="refresh-dot"></div>
+          <span>Auto-refresh in <span style="font-variant-numeric:tabular-nums" id="refresh-countdown">30</span>s</span>
+        </div>
+      </div>
 
-        <div class="table-area">
-
+      <div class="table-area">
         <!-- Desktop table -->
         <div class="table-wrap">
           <table>
@@ -740,17 +596,41 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
             <tbody id="tbody"></tbody>
           </table>
         </div>
-
         <!-- Mobile cards -->
         <div class="m-cards" id="m-cards"></div>
+      </div>
+    </div>
 
-        </div><!-- /table-area -->
+    <!-- ══ PIVOT / EVALUATOR SUMMARY TAB ════════════════════ -->
+    <div id="tab-pivot" style="display:none">
+
+      <!-- Date filter toolbar -->
+      <div class="pivot-toolbar" id="pivot-toolbar">
+        <div class="pivot-date-group">
+          <span class="pivot-date-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+            </svg>
+            From Date
+          </span>
+          <input type="date" class="pivot-date-input" id="pivot-from-date"
+                 onchange="onPivotDateChange()"/>
+          <button class="btn-clear-date" id="btn-clear-date" onclick="clearPivotDate()">
+            ✕ Clear
+          </button>
+        </div>
+        <div class="pivot-filter-badge" id="pivot-filter-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+          </svg>
+          <span id="pivot-filter-badge-text">Filtered</span>
+        </div>
+        <span class="pivot-row-count" id="pivot-row-count"></span>
       </div>
 
-      <!-- Pivot tab -->
-      <div id="tab-pivot" style="display:none">
-        <div class="section-label">Update Progress — By Evaluator</div>
-        <div class="pivot-wrap">
+      <!-- Desktop pivot table -->
+      <div class="pivot-area">
+        <div class="pivot-wrap" id="pivot-wrap">
           <table class="ptable">
             <thead><tr>
               <th>Evaluator</th>
@@ -761,12 +641,18 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
               <th>Completion %</th>
             </tr></thead>
             <tbody id="pivot-tbody"></tbody>
+            <tfoot id="pivot-tfoot"></tfoot>
           </table>
         </div>
+
+        <!-- Mobile pivot cards -->
+        <div class="pivot-m-cards" id="pivot-m-cards"></div>
       </div>
 
-    </div><!-- /main-inner -->
-  </div><!-- /main-page -->
+    </div><!-- /tab-pivot -->
+
+  </div><!-- /main-inner -->
+</div><!-- /main-page -->
 
 </div><!-- /app -->
 <div id="toast"></div>
@@ -776,9 +662,11 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 // CONFIG
 // ══════════════════════════════════════════════════════════════
 const API_URL = 'https://script.google.com/macros/s/AKfycbzbDIbB9kXy3YM53dpfq0Y2QizO6C_4nqpjx9vY4a4ph-Cg6Y_5-lvEzV4GaSa3DjT_hg/exec';
-let user = null;
+let user     = null;
 let vehicles = [];
-let pivotData = {};
+let pivotData   = {};
+let pivotTotals = { total: 0, updated: 0, pending: 0 };
+let _activeTab  = 'vehicles';
 
 // ── MOBILE NUMBER CACHE ───────────────────────────────────────
 const LS_MOB_KEY = 'aeval_last_mobile';
@@ -786,11 +674,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const cached = localStorage.getItem(LS_MOB_KEY);
   if (cached) {
     const inp = document.getElementById('mob');
-    if (inp) {
-      inp.value = cached;
-      inp.style.background = '#f0fdf4';
-      inp.style.borderColor = '#bbf7d0';
-    }
+    if (inp) { inp.value = cached; inp.style.background = '#f0fdf4'; inp.style.borderColor = '#bbf7d0'; }
   }
 });
 
@@ -799,28 +683,20 @@ window.addEventListener('DOMContentLoaded', () => {
 // ══════════════════════════════════════════════════════════════
 async function apiGet(params) {
   const url = API_URL + '?' + new URLSearchParams(params);
-  const r = await fetch(url, { redirect: 'follow', cache: 'no-store' });
-  if (!r.ok) throw new Error('HTTP ' + r.status + ' — ' + r.statusText);
+  const r   = await fetch(url, { redirect:'follow', cache:'no-store' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
   const text = await r.text();
-  try {
-    return JSON.parse(text);
-  } catch(e) {
-    throw new Error('Invalid response: ' + text.slice(0, 120));
-  }
+  try { return JSON.parse(text); } catch(e) { throw new Error('Invalid response: ' + text.slice(0,120)); }
 }
 async function apiPost(body) {
   const r = await fetch(API_URL, {
-    method: 'POST', redirect: 'follow', cache: 'no-store',
-    headers: { 'Content-Type': 'text/plain' },
+    method:'POST', redirect:'follow', cache:'no-store',
+    headers:{ 'Content-Type':'text/plain' },
     body: JSON.stringify(body)
   });
-  if (!r.ok) throw new Error('HTTP ' + r.status + ' — ' + r.statusText);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
   const text = await r.text();
-  try {
-    return JSON.parse(text);
-  } catch(e) {
-    throw new Error('Invalid response: ' + text.slice(0, 120));
-  }
+  try { return JSON.parse(text); } catch(e) { throw new Error('Invalid response: ' + text.slice(0,120)); }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -835,19 +711,18 @@ async function login() {
     setBtnLoading(false);
     if (!res.success) { showErr(res.message); return; }
     user = res.user;
-    localStorage.setItem(LS_MOB_KEY, mob); // cache for next login
+    localStorage.setItem(LS_MOB_KEY, mob);
     document.getElementById('login-err').style.display = 'none';
     document.getElementById('login-page').style.display = 'none';
-    document.getElementById('main-page').style.display = 'flex';
+    document.getElementById('main-page').style.display  = 'flex';
     document.getElementById('main-page').style.flexDirection = 'column';
-    // recalc sticky offsets once header is rendered
     requestAnimationFrame(() => requestAnimationFrame(recalcSticky));
     const rb = document.getElementById('h-role');
     rb.textContent = user.role;
-    rb.className = 'badge-role ' + user.role.toLowerCase();
+    rb.className   = 'badge-role ' + user.role.toLowerCase();
     if (user.role === 'Admin') {
       document.getElementById('admin-tabs').style.display = 'flex';
-      document.getElementById('ev-flt').style.display = 'block';
+      document.getElementById('ev-flt').style.display     = 'block';
     }
     loadVehicles();
   } catch(e) {
@@ -855,7 +730,6 @@ async function login() {
     showErr('Connection failed. Please check your network and try again.');
   }
 }
-
 function setBtnLoading(on) {
   const b = document.getElementById('login-btn');
   b.disabled = on; b.textContent = on ? 'Signing in…' : 'Sign In';
@@ -865,18 +739,21 @@ function showErr(msg) {
   el.textContent = msg; el.style.display = 'block';
 }
 function logout() {
-  user = null; vehicles = [];
-  stopAutoRefresh();
-  stopHintTicker();
-  document.getElementById('main-page').style.display = 'none';
+  user = null; vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 };
+  stopAutoRefresh(); stopHintTicker();
+  document.getElementById('main-page').style.display  = 'none';
   document.getElementById('login-page').style.display = 'flex';
   document.getElementById('mob').value = '';
+  _activeTab = 'vehicles';
   document.getElementById('tab-vehicles').style.display = 'block';
-  document.getElementById('tab-pivot').style.display = 'none';
+  document.getElementById('tab-pivot').style.display    = 'none';
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   const first = document.querySelector('.tab');
   if (first) first.classList.add('active');
   document.getElementById('hdr-sub').textContent = 'Welcome';
+  // reset pivot date filter
+  document.getElementById('pivot-from-date').value = '';
+  updatePivotFilterBadge('');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -885,18 +762,14 @@ function logout() {
 async function loadVehicles() {
   showLoading();
   try {
-    const res = await apiGet({ action: 'vehicles', name: user.name, role: user.role });
-    if (!res.success) {
-      showLoadError('Sheet error: ' + res.message);
-      return;
-    }
+    const res = await apiGet({ action:'vehicles', name:user.name, role:user.role });
+    if (!res.success) { showLoadError('Sheet error: ' + res.message); return; }
     vehicles = res.data;
     const updated = vehicles.filter(v => String(v.status).toLowerCase() === 'updated').length;
-    document.getElementById('hdr-sub').textContent =
-      `Welcome, ${user.name} · ${updated}/${vehicles.length} updated`;
+    document.getElementById('hdr-sub').textContent = `Welcome, ${user.name} · ${updated}/${vehicles.length} updated`;
     buildEvalFilter();
     renderStats();
-    document.getElementById('st-flt').value = 'Pending'; // default to pending on load
+    document.getElementById('st-flt').value = 'Pending';
     filter();
     startAutoRefresh();
     startHintTicker();
@@ -905,8 +778,11 @@ async function loadVehicles() {
   }
   if (user && user.role === 'Admin') {
     try {
-      const pres = await apiGet({ action: 'pivot' });
-      if (pres.success) pivotData = pres.pivot;
+      const pres = await apiGet({ action:'pivot' });
+      if (pres.success) {
+        pivotData   = pres.pivot;
+        pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
+      }
     } catch(_) {}
   }
 }
@@ -917,40 +793,131 @@ function showLoadError(msg) {
       <div style="font-size:28px;margin-bottom:12px">⚠️</div>
       <div style="font-weight:700;font-size:15px;margin-bottom:6px">Failed to load vehicles</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:20px;word-break:break-word;max-width:320px;margin-left:auto;margin-right:auto">${msg}</div>
-      <button onclick="loadVehicles()"
-        style="padding:10px 24px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">
-        ↺ Retry
-      </button>
+      <button onclick="loadVehicles()" style="padding:10px 24px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">↺ Retry</button>
     </div>`;
-  document.getElementById('tbody').innerHTML  = `<tr><td colspan="12">${errHtml}</td></tr>`;
+  document.getElementById('tbody').innerHTML   = `<tr><td colspan="12">${errHtml}</td></tr>`;
   document.getElementById('m-cards').innerHTML = errHtml;
 }
-
 function showLoading() {
-  document.getElementById('tbody').innerHTML =
-    '<tr><td colspan="12"><div class="loader"><div class="spin"></div><span>Loading vehicles…</span></div></td></tr>';
-  document.getElementById('m-cards').innerHTML =
-    '<div class="loader"><div class="spin"></div><span>Loading…</span></div>';
+  document.getElementById('tbody').innerHTML   = '<tr><td colspan="12"><div class="loader"><div class="spin"></div><span>Loading vehicles…</span></div></td></tr>';
+  document.getElementById('m-cards').innerHTML = '<div class="loader"><div class="spin"></div><span>Loading…</span></div>';
 }
 
 // ══════════════════════════════════════════════════════════════
-// STATS
+// STATS BAR
+// Shows vehicle stats when on Vehicles tab.
+// Shows pivot stats (date-filtered) when on Evaluator Summary tab.
 // ══════════════════════════════════════════════════════════════
 function renderStats() {
+  if (_activeTab === 'pivot') {
+    renderPivotStats(pivotTotals);
+    return;
+  }
   const total   = vehicles.length;
   const updated = vehicles.filter(v => String(v.status).toLowerCase() === 'updated').length;
   const pending = total - updated;
-  document.getElementById('stat-total').textContent   = total;
-  document.getElementById('stat-pending').textContent = pending;
-  document.getElementById('stat-updated').textContent = updated;
-  // also update header sub
+  setStats(total, pending, updated, false);
+  document.getElementById('stat-total-lbl').textContent   = 'Total';
+  document.getElementById('stat-pending-lbl').textContent = 'Pending';
+  document.getElementById('stat-updated-lbl').textContent = 'Updated';
   document.getElementById('hdr-sub').textContent =
     `Welcome, ${user.name} · ${updated}/${total} updated`;
   requestAnimationFrame(recalcSticky);
 }
 
+function renderPivotStats(totals) {
+  const hasFilter = !!document.getElementById('pivot-from-date').value;
+  setStats(totals.total, totals.pending, totals.updated, hasFilter);
+  document.getElementById('stat-total-lbl').textContent   = 'Total';
+  document.getElementById('stat-pending-lbl').textContent = 'Pending';
+  document.getElementById('stat-updated-lbl').textContent = 'Updated';
+  requestAnimationFrame(recalcSticky);
+}
+
+function setStats(total, pending, updated, filterActive) {
+  document.getElementById('stat-total').textContent   = total;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-updated').textContent = updated;
+  const bar = document.getElementById('stats-bar');
+  if (filterActive) bar.classList.add('filter-active');
+  else              bar.classList.remove('filter-active');
+}
+
+function computeTotalsFromPivot(pivot) {
+  let total = 0, updated = 0, pending = 0;
+  Object.values(pivot || {}).forEach(d => {
+    total   += d.total   || 0;
+    updated += d.updated || 0;
+    pending += d.pending || 0;
+  });
+  return { total, updated, pending };
+}
+
 // ══════════════════════════════════════════════════════════════
-// FILTER
+// PIVOT DATE FILTER
+// ══════════════════════════════════════════════════════════════
+function onPivotDateChange() {
+  const val = document.getElementById('pivot-from-date').value;
+  updatePivotFilterBadge(val);
+  loadPivotWithFilter();
+}
+
+function clearPivotDate() {
+  document.getElementById('pivot-from-date').value = '';
+  updatePivotFilterBadge('');
+  loadPivotWithFilter();
+}
+
+function updatePivotFilterBadge(dateVal) {
+  const badge   = document.getElementById('pivot-filter-badge');
+  const clearBtn = document.getElementById('btn-clear-date');
+  const dateInput = document.getElementById('pivot-from-date');
+  if (dateVal) {
+    // Format for display: "From dd/mm/yyyy"
+    const parts = dateVal.split('-');
+    const display = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateVal;
+    document.getElementById('pivot-filter-badge-text').textContent = `From ${display}`;
+    badge.classList.add('visible');
+    clearBtn.classList.add('visible');
+    dateInput.classList.add('active');
+  } else {
+    badge.classList.remove('visible');
+    clearBtn.classList.remove('visible');
+    dateInput.classList.remove('active');
+  }
+}
+
+async function loadPivotWithFilter() {
+  // Show loading in pivot area
+  document.getElementById('pivot-tbody').innerHTML =
+    '<tr><td colspan="6"><div class="loader"><div class="spin"></div><span>Loading…</span></div></td></tr>';
+  document.getElementById('pivot-tfoot').innerHTML = '';
+  document.getElementById('pivot-m-cards').innerHTML =
+    '<div class="loader"><div class="spin"></div><span>Loading…</span></div>';
+  document.getElementById('pivot-row-count').textContent = '';
+
+  try {
+    const fromDate = document.getElementById('pivot-from-date').value;
+    const params   = { action: 'pivot' };
+    if (fromDate) params.fromDate = fromDate;
+    const pres = await apiGet(params);
+    if (!pres.success) { toast('Failed to load summary data', 'err'); return; }
+    pivotData   = pres.pivot;
+    pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
+    renderPivot();
+    // Update stats bar to reflect filtered pivot totals
+    if (_activeTab === 'pivot') renderPivotStats(pivotTotals);
+  } catch(e) {
+    toast('Network error loading summary', 'err');
+    document.getElementById('pivot-tbody').innerHTML =
+      '<tr><td colspan="6"><div class="empty"><div class="empty-ico">⚠️</div><p>Failed to load data</p></div></td></tr>';
+    document.getElementById('pivot-m-cards').innerHTML =
+      '<div class="empty"><div class="empty-ico">⚠️</div><p>Failed to load data</p></div>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// FILTER (vehicles tab)
 // ══════════════════════════════════════════════════════════════
 function filter() {
   const q  = (document.getElementById('q').value || '').toLowerCase();
@@ -979,7 +946,159 @@ function buildEvalFilter() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// DESKTOP TABLE
+// TABS
+// ══════════════════════════════════════════════════════════════
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const tab = el.dataset.tab;
+  _activeTab = tab;
+  document.getElementById('tab-vehicles').style.display = tab === 'vehicles' ? 'block' : 'none';
+  document.getElementById('tab-pivot').style.display    = tab === 'pivot'    ? 'block' : 'none';
+
+  if (tab === 'pivot') {
+    // Load pivot data (with any existing date filter)
+    const fromDate = document.getElementById('pivot-from-date').value;
+    if (Object.keys(pivotData).length === 0 || fromDate) {
+      loadPivotWithFilter();
+    } else {
+      renderPivot();
+      renderPivotStats(pivotTotals);
+    }
+  } else {
+    // Restore vehicle stats
+    renderStats();
+  }
+  requestAnimationFrame(recalcSticky);
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER PIVOT — desktop table + mobile cards
+// ══════════════════════════════════════════════════════════════
+function renderPivot() {
+  const entries = Object.entries(pivotData).sort((a,b) => b[1].total - a[1].total);
+  const totals  = pivotTotals;
+
+  // Row count
+  const countEl = document.getElementById('pivot-row-count');
+  if (countEl) {
+    countEl.textContent = entries.length
+      ? entries.length + ' evaluator' + (entries.length !== 1 ? 's' : '')
+      : '';
+  }
+
+  if (!entries.length) {
+    const emptyHtml = `<div class="pivot-empty"><div class="pivot-empty-ico">📋</div><p>No data for selected period</p></div>`;
+    document.getElementById('pivot-tbody').innerHTML  = `<tr><td colspan="6">${emptyHtml}</td></tr>`;
+    document.getElementById('pivot-tfoot').innerHTML  = '';
+    document.getElementById('pivot-m-cards').innerHTML = emptyHtml;
+    return;
+  }
+
+  // ── Desktop tbody ──────────────────────────────────────────
+  document.getElementById('pivot-tbody').innerHTML = entries.map(([name, d]) => {
+    const pct = d.total ? Math.round(d.updated / d.total * 100) : 0;
+    const col = pct === 100 ? 'var(--green)' : pct > 50 ? 'var(--orange)' : 'var(--red)';
+    return `<tr>
+      <td class="p-name">${name}</td>
+      <td><strong>${d.total}</strong></td>
+      <td style="color:var(--green)"><strong>${d.updated}</strong></td>
+      <td style="color:var(--orange)"><strong>${d.pending}</strong></td>
+      <td>
+        <div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">${d.updated} of ${d.total}</div>
+      </td>
+      <td><span class="pct" style="color:${col}">${pct}%</span></td>
+    </tr>`;
+  }).join('');
+
+  // ── Desktop tfoot (totals row) ─────────────────────────────
+  const totalPct = totals.total ? Math.round(totals.updated / totals.total * 100) : 0;
+  const totalCol = totalPct === 100 ? 'var(--green)' : totalPct > 50 ? 'var(--orange)' : 'var(--red)';
+  document.getElementById('pivot-tfoot').innerHTML = `<tr>
+    <td class="p-name" style="color:var(--navy)">📊 Total</td>
+    <td><strong>${totals.total}</strong></td>
+    <td style="color:var(--green)"><strong>${totals.updated}</strong></td>
+    <td style="color:var(--orange)"><strong>${totals.pending}</strong></td>
+    <td>
+      <div class="pbar"><div class="pbar-fill" style="width:${totalPct}%"></div></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">${totals.updated} of ${totals.total}</div>
+    </td>
+    <td><span class="pct" style="color:${totalCol}">${totalPct}%</span></td>
+  </tr>`;
+
+  // ── Mobile cards ───────────────────────────────────────────
+  renderPivotMobileCards(entries, totals);
+}
+
+function renderPivotMobileCards(entries, totals) {
+  const totalPct = totals.total ? Math.round(totals.updated / totals.total * 100) : 0;
+  const totalCol = totalPct === 100 ? 'var(--green)' : totalPct > 50 ? 'var(--orange)' : 'var(--red)';
+
+  let html = '';
+
+  // Totals summary card (navy gradient)
+  html += `
+  <div class="pivot-totals-card">
+    <div class="ptc-item">
+      <div class="ptc-num">${totals.total}</div>
+      <div class="ptc-lbl">Total</div>
+    </div>
+    <div class="ptc-item">
+      <div class="ptc-num">${totals.pending}</div>
+      <div class="ptc-lbl">Pending</div>
+    </div>
+    <div class="ptc-item">
+      <div class="ptc-num">${totals.updated}</div>
+      <div class="ptc-lbl">Updated</div>
+    </div>
+  </div>`;
+
+  // Per-evaluator cards
+  html += entries.map(([name, d]) => {
+    const pct = d.total ? Math.round(d.updated / d.total * 100) : 0;
+    const col = pct === 100 ? 'var(--green)' : pct > 50 ? 'var(--orange)' : 'var(--red)';
+    const bgStyle = pct === 100
+      ? 'border-left:4px solid var(--green);background:var(--green-bg)'
+      : d.pending > 0
+        ? 'border-left:4px solid var(--orange)'
+        : '';
+    return `
+    <div class="pivot-m-card" style="${bgStyle}">
+      <div class="pivot-m-card-header">
+        <div class="pivot-m-name">${name}</div>
+        <span class="pivot-m-pct-badge status ${pct===100?'updated':'pending'}">${pct}%</span>
+      </div>
+      <div class="pivot-m-body">
+        <div class="pivot-m-stats">
+          <div class="pivot-m-stat">
+            <div class="pivot-m-stat-num blue">${d.total}</div>
+            <div class="pivot-m-stat-lbl">Total</div>
+          </div>
+          <div class="pivot-m-stat">
+            <div class="pivot-m-stat-num green">${d.updated}</div>
+            <div class="pivot-m-stat-lbl">Updated</div>
+          </div>
+          <div class="pivot-m-stat">
+            <div class="pivot-m-stat-num orange">${d.pending}</div>
+            <div class="pivot-m-stat-lbl">Pending</div>
+          </div>
+        </div>
+        <div class="pivot-m-pbar-row">
+          <div class="pivot-m-pbar">
+            <div class="pivot-m-pbar-fill" style="width:${pct}%"></div>
+          </div>
+          <span class="pivot-m-pbar-label" style="color:${col}">${d.updated}/${d.total}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('pivot-m-cards').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// DESKTOP TABLE RENDER
 // ══════════════════════════════════════════════════════════════
 function renderTable(list) {
   if (!list.length) {
@@ -988,11 +1107,11 @@ function renderTable(list) {
     return;
   }
   document.getElementById('tbody').innerHTML = list.map((v, i) => {
-    const done     = String(v.status).toLowerCase() === 'updated';
+    const done      = String(v.status).toLowerCase() === 'updated';
     const fuelTrans = [v.fuelType, v.transmission].filter(Boolean).join(' / ') || '—';
-    const locked1h = done && isEditLocked(v);
-    const hasTvsc  = v.tvscPrice && Number(v.tvscPrice) > 0;
-    const hasExp   = v.expectedPrice && Number(v.expectedPrice) > 0;
+    const locked1h  = done && isEditLocked(v);
+    const hasTvsc   = v.tvscPrice && Number(v.tvscPrice) > 0;
+    const hasExp    = v.expectedPrice && Number(v.expectedPrice) > 0;
     return `<tr style="cursor:pointer" onclick="openSheet(${v.rowIndex})">
       <td class="td-num">${i+1}</td>
       <td class="td-fixed"><span class="reg">${v.registrationNumber}</span></td>
@@ -1001,16 +1120,12 @@ function renderTable(list) {
         ${v.colorId ? `<span class="color-tag">${v.colorId}</span>` : ''}
       </td>
       <td class="td-fixed"><span class="yr">${v.yearOfMfg||'—'}</span></td>
-      <td class="sub-text" style="word-break:break-word">${fuelTrans}</td>
+      <td class="sub-text">${fuelTrans}</td>
       <td><div class="cust-name">${v.customerName||'—'}</div></td>
       <td><div class="eval-name">${v.evaluatorName||'—'}</div></td>
       <td class="td-fixed sub-text">${v.speedometer ? Number(v.speedometer).toLocaleString()+' km' : '—'}</td>
-      <td class="td-fixed">
-        <span class="${hasTvsc?'cprice':'cprice empty'}">${hasTvsc ? '₹'+Number(v.tvscPrice).toLocaleString() : '—'}</span>
-      </td>
-      <td class="td-fixed">
-        <span class="${hasExp?'cprice':'cprice empty'}">${hasExp ? '₹'+Number(v.expectedPrice).toLocaleString() : '—'}</span>
-      </td>
+      <td class="td-fixed"><span class="${hasTvsc?'cprice':'cprice empty'}">${hasTvsc ? '₹'+Number(v.tvscPrice).toLocaleString() : '—'}</span></td>
+      <td class="td-fixed"><span class="${hasExp?'cprice':'cprice empty'}">${hasExp ? '₹'+Number(v.expectedPrice).toLocaleString() : '—'}</span></td>
       <td class="td-fixed">
         <span class="status ${done?'updated':'pending'}" id="st-${v.rowIndex}">${v.status||'Pending'}</span>
       </td>
@@ -1027,7 +1142,7 @@ function renderTable(list) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// MOBILE CARDS
+// MOBILE VEHICLE CARDS
 // ══════════════════════════════════════════════════════════════
 function renderCards(list) {
   if (!list.length) {
@@ -1072,62 +1187,32 @@ function renderCards(list) {
   }).join('');
 }
 
-// ── TIMESTAMP HELPERS ────────────────────────────────────────
-const EDIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
+// ══════════════════════════════════════════════════════════════
+// TIMESTAMP / LOCK HELPERS
+// ══════════════════════════════════════════════════════════════
+const EDIT_WINDOW_MS = 2 * 60 * 1000;
 
-// ── LOCK HELPERS ──────────────────────────────────────────────
 function elapsedMs(v) {
   if (!v) return null;
-
-  // 1. Best: epoch ms from server (after Code.gs redeploy)
   const ms = Number(v.timestampMs);
   if (ms > 0) return Math.max(0, Date.now() - ms);
-
-  // 2. Parse the formatted string "16/03/2026 17:08:11"
   const ts = String(v.timestamp || '').trim();
   if (!ts) return null;
   const p = ts.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
   if (!p) return null;
-  // p: [full, dd, MM, yyyy, HH, mm, ss]
-  const d = new Date(
-    parseInt(p[3], 10),
-    parseInt(p[2], 10) - 1,
-    parseInt(p[1], 10),
-    parseInt(p[4], 10),
-    parseInt(p[5], 10),
-    parseInt(p[6], 10)
-  );
+  const d = new Date(parseInt(p[3]),parseInt(p[2])-1,parseInt(p[1]),parseInt(p[4]),parseInt(p[5]),parseInt(p[6]));
   if (isNaN(d.getTime())) return null;
   return Math.max(0, Date.now() - d.getTime());
 }
-
 function isEditLocked(v) {
   if (!v || String(v.status).toLowerCase() !== 'updated') return false;
   const e = elapsedMs(v);
   if (e === null) return false;
   return e > EDIT_WINDOW_MS;
 }
-
-function secsLeft(v) {
-  const e = elapsedMs(v);
-  if (e === null) return EDIT_WINDOW_MS / 1000;
-  return Math.max(0, Math.round((EDIT_WINDOW_MS - e) / 1000));
-}
-
 function fmtCountdown(secs) {
-  return Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+  return Math.floor(secs/60) + ':' + String(secs%60).padStart(2,'0');
 }
-
-function fmtElapsed(v) {
-  const e = elapsedMs(v);
-  if (!e) return '';
-  const m = Math.floor(e / 60000), s = Math.round((e % 60000) / 1000);
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
-}
-
-function recordSaveTime() {}
-
-
 
 // ── CARD HINT TICKER ─────────────────────────────────────────
 let _hintTicker = null;
@@ -1136,8 +1221,7 @@ function startHintTicker() {
   _hintTicker = setInterval(tickHints, 1000);
 }
 function stopHintTicker() {
-  clearInterval(_hintTicker);
-  _hintTicker = null;
+  clearInterval(_hintTicker); _hintTicker = null;
 }
 function tickHints() {
   vehicles.forEach(v => {
@@ -1160,183 +1244,14 @@ function tickHints() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// START PRICE  =  L - (INT((L - J) / M) + 1) * M
-// L = Expected Price, J = TVSC Price, M = Slab increment
-// Slab: Expected >= 700000 → 7000 | >= 500000 → 5000 | else → 2000
+// START PRICE CALC
 // ══════════════════════════════════════════════════════════════
 function calcStart(expVal, tvVal) {
-  const exp = Number(expVal);
-  const tv  = Number(tvVal);
+  const exp = Number(expVal), tv = Number(tvVal);
   if (!exp || isNaN(exp) || !tv || isNaN(tv)) return null;
   const m = exp >= 700000 ? 7000 : exp >= 500000 ? 5000 : 2000;
   return exp - (Math.floor((exp - tv) / m) + 2) * m;
 }
-function previewStart(ri) {
-  const sp = calcStart(
-    document.getElementById('ex-'+ri)?.value,
-    document.getElementById('tv-'+ri)?.value
-  );
-  const el = document.getElementById('sp-'+ri);
-  if (el) { el.textContent = sp != null ? '₹ '+sp.toLocaleString() : '—'; el.className='start-val'+(sp != null?'':' empty'); }
-}
-function previewStartM(ri) {
-  const sp = calcStart(
-    document.getElementById('mc-ex-'+ri)?.value,
-    document.getElementById('mc-tv-'+ri)?.value
-  );
-  const el = document.getElementById('mc-sp-'+ri);
-  if (el) el.textContent = 'Start: '+(sp != null ? '₹ '+sp.toLocaleString() : 'Auto-calc');
-}
-
-// ══════════════════════════════════════════════════════════════
-// VALIDATION HELPER
-// ══════════════════════════════════════════════════════════════
-function validatePrices(tv, ex, prefix) {
-  if (!tv || tv === '') { toast('TVSC Price is required before saving.', 'err'); return false; }
-  if (!ex || ex === '') { toast('Expected Price is required before saving.', 'err'); return false; }
-  if (Number(tv) > Number(ex)) {
-    toast('TVSC Price must be ≤ Expected Price.', 'err');
-    // flash the TVSC input red
-    const el = document.getElementById(prefix + 'tv-' + (prefix ? '' : ''));
-    return false;
-  }
-  return true;
-}
-
-// ══════════════════════════════════════════════════════════════
-// EDIT MODE TOGGLE
-// ══════════════════════════════════════════════════════════════
-function enableEdit(ri, mode) {
-  const v = vehicles.find(x => x.rowIndex === ri);
-  if (v && String(v.status).toLowerCase() === 'updated') {
-    let locked = true;
-    if (v.timestamp) {
-      const saved = new Date(v.timestamp);
-      if (!isNaN(saved.getTime())) {
-        locked = (Date.now() - saved.getTime()) > 120000;
-      }
-    }
-    if (locked) { toast('🔒 Editing locked after 2 minutes.', 'err'); return; }
-  }
-  if (mode === 'desktop') {
-    ['tv-','ex-'].forEach(p => {
-      const el = document.getElementById(p+ri);
-      if (el) { el.disabled = false; el.classList.remove('filled'); el.classList.add('editing'); }
-    });
-    const btn = document.getElementById('sb-'+ri);
-    if (btn) {
-      btn.className = 'btn-save';
-      btn.textContent = 'Save';
-      btn.onclick = () => save(ri);
-    }
-  } else {
-    ['mc-tv-','mc-ex-'].forEach(p => {
-      const el = document.getElementById(p+ri);
-      if (el) { el.disabled = false; el.classList.remove('filled'); el.classList.add('editing'); }
-    });
-    const btn = document.getElementById('mc-sb-'+ri);
-    if (btn) {
-      btn.className = 'btn-save';
-      btn.textContent = 'Save';
-      btn.onclick = () => saveM(ri);
-    }
-  }
-  toast('Prices unlocked for editing.', 'ok');
-}
-
-// ══════════════════════════════════════════════════════════════
-// SAVE — DESKTOP
-// ══════════════════════════════════════════════════════════════
-async function save(ri) {
-  const tvEl = document.getElementById('tv-'+ri);
-  const exEl = document.getElementById('ex-'+ri);
-  const tv = tvEl?.value?.trim();
-  const ex = exEl?.value?.trim();
-
-  if (!tv) { toast('TVSC Price is required before saving.', 'err'); tvEl?.focus(); return; }
-  if (!ex) { toast('Expected Price is required before saving.', 'err'); exEl?.focus(); return; }
-  if (Number(tv) > Number(ex)) {
-    toast('TVSC Price must be ≤ Expected Price.', 'err');
-    tvEl?.classList.add('input-err'); setTimeout(() => tvEl?.classList.remove('input-err'), 1800);
-    return;
-  }
-
-  const btn = document.getElementById('sb-'+ri);
-  btn.disabled = true; btn.textContent = '…';
-  try {
-    const res = await apiPost({ action:'save', rowIndex:ri, tvscPrice:tv, expectedPrice:ex });
-    if (!res.success) { toast('Save failed: '+res.message,'err'); btn.disabled=false; btn.textContent='Save'; return; }
-    applySaveUI(ri, res, 'desktop');
-    toast('Prices saved successfully!', 'ok');
-  } catch(e) {
-    toast('Network error. Please retry.', 'err');
-    btn.disabled=false; btn.textContent='Save';
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
-// SAVE — MOBILE
-// ══════════════════════════════════════════════════════════════
-async function saveM(ri) {
-  const tvEl = document.getElementById('mc-tv-'+ri);
-  const exEl = document.getElementById('mc-ex-'+ri);
-  const tv = tvEl?.value?.trim();
-  const ex = exEl?.value?.trim();
-
-  if (!tv) { toast('TVSC Price is required before saving.', 'err'); tvEl?.focus(); return; }
-  if (!ex) { toast('Expected Price is required before saving.', 'err'); exEl?.focus(); return; }
-  if (Number(tv) > Number(ex)) {
-    toast('TVSC Price must be ≤ Expected Price.', 'err');
-    tvEl?.classList.add('input-err'); setTimeout(() => tvEl?.classList.remove('input-err'), 1800);
-    return;
-  }
-
-  const btn = document.getElementById('mc-sb-'+ri);
-  btn.disabled = true; btn.textContent = '…';
-  try {
-    const res = await apiPost({ action:'save', rowIndex:ri, tvscPrice:tv, expectedPrice:ex });
-    if (!res.success) { toast('Save failed: '+res.message,'err'); btn.disabled=false; btn.textContent='Save'; return; }
-    applySaveUI(ri, res, 'mobile');
-    toast('Prices saved!', 'ok');
-  } catch(e) {
-    toast('Network error. Please retry.', 'err');
-    btn.disabled=false; btn.textContent='Save';
-  }
-}
-
-function applySaveUI(ri, res, mode) {
-  if (mode === 'desktop') {
-    // lock inputs
-    ['tv-','ex-'].forEach(p => {
-      const el = document.getElementById(p+ri);
-      if (el) { el.disabled = true; el.classList.add('filled'); el.classList.remove('editing','input-err'); }
-    });
-    // swap Save → Edit
-    const btn = document.getElementById('sb-'+ri);
-    if (btn) { btn.disabled=false; btn.textContent='✏ Edit'; btn.className='btn-edit'; btn.onclick=()=>enableEdit(ri,'desktop'); }
-    const st = document.getElementById('st-'+ri);
-    if (st) { st.textContent='Updated'; st.className='status updated'; }
-  } else {
-    // lock inputs
-    ['mc-tv-','mc-ex-'].forEach(p => {
-      const el = document.getElementById(p+ri);
-      if (el) { el.disabled = true; el.classList.add('filled'); el.classList.remove('editing','input-err'); }
-    });
-    // swap Save → Edit
-    const btn = document.getElementById('mc-sb-'+ri);
-    if (btn) { btn.disabled=false; btn.textContent='✏ Edit'; btn.className='btn-edit'; btn.onclick=()=>enableEdit(ri,'mobile'); }
-    const st = document.getElementById('mc-st-'+ri);
-    if (st) { st.textContent='Updated'; st.className='status updated'; }
-    const ts = document.getElementById('mc-ts-'+ri);
-    if (ts) ts.textContent = 'Saved: '+res.timestamp;
-    const card = document.getElementById('mc-sb-'+ri)?.closest('.m-card');
-    if (card) card.className = 'm-card is-updated';
-  }
-  const v = vehicles.find(x => x.rowIndex === ri);
-  if (v) { v.status='Updated'; v.timestamp=res.timestamp; v.startPrice=res.startPrice; v.timestampMs=res.timestampMs; }
-  renderStats();
-}
-
 
 // ══════════════════════════════════════════════════════════════
 // BOTTOM SHEET
@@ -1354,29 +1269,31 @@ function openSheet(ri) {
 
   const tvEl = document.getElementById('sh-tv');
   const exEl = document.getElementById('sh-ex');
-  tvEl.value = v.tvscPrice || '';
+  tvEl.value = v.tvscPrice     || '';
   exEl.value = v.expectedPrice || '';
   tvEl.disabled = done;
   exEl.disabled = done;
   tvEl.className = 'sheet-input' + (done ? ' filled' : '');
   exEl.className = 'sheet-input' + (done ? ' filled' : '');
 
-  document.getElementById('sh-err').style.display = 'none';
-
-  // ── 2-min lock ────────────────────────────────────────────────
-  let editLocked = false;
-  if (done && v.timestamp) {
-    const saved = new Date(v.timestamp); // natively parses "Mon Mar 16 2026 17:08:10 GMT+0530"
-    if (!isNaN(saved.getTime())) {
-      editLocked = (Date.now() - saved.getTime()) > 120000;
-    } else {
-      editLocked = true; // can't parse → lock
-    }
-  } else if (done && !v.timestamp) {
-    editLocked = true; // no timestamp → lock
+  // Start price preview
+  const startBox = document.getElementById('sh-start-box');
+  const startVal = document.getElementById('sh-start-val');
+  if (v.startPrice && Number(v.startPrice) > 0) {
+    startBox.style.display = 'flex';
+    startVal.textContent   = '₹ ' + Number(v.startPrice).toLocaleString();
+  } else {
+    startBox.style.display = 'none';
   }
 
-  // buttons
+  document.getElementById('sh-err').style.display = 'none';
+
+  let editLocked = false;
+  if (done) {
+    const e = elapsedMs(v);
+    editLocked = (e === null) ? true : e > EDIT_WINDOW_MS;
+  }
+
   if (!done) {
     document.getElementById('sh-btn-row').innerHTML =
       `<button class="btn-sheet-save" onclick="sheetSave()">Save Prices</button>`;
@@ -1385,7 +1302,7 @@ function openSheet(ri) {
       `<button class="btn-sheet-save" style="background:var(--green);width:100%" disabled>✓ Saved</button>`;
     const errEl = document.getElementById('sh-err');
     errEl.textContent = '🔒 Editing locked after 2 minutes.';
-    errEl.style.display = 'block';
+    errEl.style.display  = 'block';
     errEl.style.background = '#fff7ed';
     errEl.style.borderColor = '#fed7aa';
     errEl.style.color = 'var(--orange)';
@@ -1418,30 +1335,27 @@ function sheetEnableEdit() {
 }
 
 function sheetPreview() {
-  const tv  = document.getElementById('sh-tv')?.value;
-  const ex  = document.getElementById('sh-ex')?.value;
-  const sp  = calcStart(ex, tv);
+  const tv = document.getElementById('sh-tv')?.value;
+  const ex = document.getElementById('sh-ex')?.value;
+  const sp = calcStart(ex, tv);
   const box = document.getElementById('sh-start-box');
   const val = document.getElementById('sh-start-val');
-  if (sp != null) {
-    box.style.display = 'flex';
-    val.textContent   = '₹ ' + sp.toLocaleString();
-  } else {
-    box.style.display = 'none';
-  }
+  if (sp != null) { box.style.display='flex'; val.textContent='₹ '+sp.toLocaleString(); }
+  else box.style.display = 'none';
 }
 
 async function sheetSave() {
-  const ri  = _sheetRowIndex;
+  const ri   = _sheetRowIndex;
   const tvEl = document.getElementById('sh-tv');
   const exEl = document.getElementById('sh-ex');
-  const tv = tvEl?.value?.trim();
-  const ex = exEl?.value?.trim();
+  const tv   = tvEl?.value?.trim();
+  const ex   = exEl?.value?.trim();
   const errEl = document.getElementById('sh-err');
-
   errEl.style.display = 'none';
-  if (!tv) { errEl.textContent = 'TVSC Price is required.'; errEl.style.display='block'; tvEl.focus(); return; }
-  if (!ex) { errEl.textContent = 'Expected Price is required.'; errEl.style.display='block'; exEl.focus(); return; }
+  errEl.style.background = ''; errEl.style.borderColor = ''; errEl.style.color = '';
+
+  if (!tv) { errEl.textContent='TVSC Price is required.'; errEl.style.display='block'; tvEl.focus(); return; }
+  if (!ex) { errEl.textContent='Expected Price is required.'; errEl.style.display='block'; exEl.focus(); return; }
   if (Number(tv) > Number(ex)) {
     errEl.textContent = 'TVSC Price must be ≤ Expected Price.';
     errEl.style.display = 'block';
@@ -1452,7 +1366,6 @@ async function sheetSave() {
 
   const btn = document.getElementById('sh-btn-row').querySelector('.btn-sheet-save');
   btn.disabled = true; btn.textContent = 'Saving…';
-
   try {
     const res = await apiPost({ action:'save', rowIndex:ri, tvscPrice:tv, expectedPrice:ex });
     if (!res.success) {
@@ -1461,17 +1374,15 @@ async function sheetSave() {
       btn.disabled = false; btn.textContent = 'Save Prices';
       return;
     }
-    // update local state
     const v = vehicles.find(x => x.rowIndex === ri);
     if (v) {
       v.status = 'Updated'; v.timestamp = res.timestamp; v.timestampMs = res.timestampMs;
       v.startPrice = res.startPrice; v.tvscPrice = tv; v.expectedPrice = ex;
-      recordSaveTime(v);
     }
-    // update card in DOM
-    const st = document.getElementById('mc-st-'+ri);
-    if (st) { st.textContent='Updated'; st.className='status updated'; }
-    const card = st?.closest('.m-card');
+    // Update DOM
+    const stEl = document.getElementById('mc-st-'+ri);
+    if (stEl) { stEl.textContent='Updated'; stEl.className='status updated'; }
+    const card = stEl?.closest('.m-card');
     if (card) card.className = 'm-card is-updated';
     const hint = card?.querySelector('.card-tap-hint');
     if (hint) { hint.textContent='✓ Tap to edit prices'; hint.className='card-tap-hint done'; }
@@ -1486,60 +1397,9 @@ async function sheetSave() {
   }
 }
 
-
-function renderPivot() {
-  const entries = Object.entries(pivotData).sort((a,b) => b[1].total - a[1].total);
-  if (!entries.length) {
-    document.getElementById('pivot-tbody').innerHTML =
-      '<tr><td colspan="6"><div class="empty"><p>No data available</p></div></td></tr>';
-    return;
-  }
-  document.getElementById('pivot-tbody').innerHTML = entries.map(([name, d]) => {
-    const pct = d.total ? Math.round(d.updated / d.total * 100) : 0;
-    const col = pct === 100 ? 'var(--green)' : pct > 50 ? 'var(--orange)' : 'var(--red)';
-    return `<tr>
-      <td class="p-name">${name}</td>
-      <td><strong>${d.total}</strong></td>
-      <td style="color:var(--green)"><strong>${d.updated}</strong></td>
-      <td style="color:var(--orange)"><strong>${d.pending}</strong></td>
-      <td>
-        <div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div>
-        <div style="font-size:11px;color:var(--muted);margin-top:3px">${d.updated} of ${d.total}</div>
-      </td>
-      <td><span class="pct" style="color:${col}">${pct}%</span></td>
-    </tr>`;
-  }).join('');
-}
-
 // ══════════════════════════════════════════════════════════════
-// TABS
+// AUTO REFRESH
 // ══════════════════════════════════════════════════════════════
-function switchTab(el) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  const tab = el.dataset.tab;
-  document.getElementById('tab-vehicles').style.display = tab==='vehicles' ? 'block' : 'none';
-  document.getElementById('tab-pivot').style.display    = tab==='pivot'    ? 'block' : 'none';
-  if (tab === 'pivot') renderPivot();
-}
-
-// ══════════════════════════════════════════════════════════════
-// STICKY OFFSET — recalculate after login / resize
-// ══════════════════════════════════════════════════════════════
-function recalcSticky() {
-  const header   = document.querySelector('.header');
-  const statsBar = document.querySelector('.stats-bar');
-  const toolbar  = document.querySelector('.toolbar');
-  if (!header || !statsBar || !toolbar) return;
-  const hh = header.getBoundingClientRect().height;
-  const sh = statsBar.getBoundingClientRect().height;
-  statsBar.style.top = hh + 'px';
-  toolbar.style.top  = (hh + sh) + 'px';
-}
-window.addEventListener('resize', recalcSticky);
-
-
-let _refreshTimer = null;
 let _countdownTimer = null;
 let _countdown = 30;
 
@@ -1547,23 +1407,15 @@ function startAutoRefresh() {
   stopAutoRefresh();
   _countdown = 30;
   updateCountdownUI();
-  // tick every second
   _countdownTimer = setInterval(() => {
     _countdown--;
     updateCountdownUI();
-    if (_countdown <= 0) {
-      silentRefresh();
-      _countdown = 30;
-    }
+    if (_countdown <= 0) { silentRefresh(); _countdown = 30; }
   }, 1000);
 }
-
 function stopAutoRefresh() {
-  clearInterval(_countdownTimer);
-  clearInterval(_refreshTimer);
-  _countdownTimer = null;
+  clearInterval(_countdownTimer); _countdownTimer = null;
 }
-
 function updateCountdownUI() {
   const el = document.getElementById('refresh-countdown');
   if (el) el.textContent = _countdown;
@@ -1577,66 +1429,75 @@ async function silentRefresh() {
     const res = await apiGet({ action:'vehicles', name:user.name, role:user.role });
     if (!res.success) return;
 
-    // Collect which rows currently have unsaved typed input
     const dirtyRows = new Set(
-      vehicles
-        .filter(v => {
-          const tvEl = document.getElementById('tv-' + v.rowIndex);
-          const exEl = document.getElementById('ex-' + v.rowIndex);
-          const savedTv = String(v.tvscPrice || '');
-          const savedEx = String(v.expectedPrice || '');
-          return (tvEl && tvEl.value !== savedTv) || (exEl && exEl.value !== savedEx);
-        })
-        .map(v => v.rowIndex)
+      vehicles.filter(v => {
+        const tvEl = document.getElementById('tv-'+v.rowIndex);
+        const exEl = document.getElementById('ex-'+v.rowIndex);
+        const savedTv = String(v.tvscPrice||'');
+        const savedEx = String(v.expectedPrice||'');
+        return (tvEl && tvEl.value !== savedTv) || (exEl && exEl.value !== savedEx);
+      }).map(v => v.rowIndex)
     );
 
-    // Update vehicles array and only refresh UI for non-dirty rows
     res.data.forEach(fresh => {
       const idx = vehicles.findIndex(v => v.rowIndex === fresh.rowIndex);
       if (idx !== -1) {
         const old = vehicles[idx];
         vehicles[idx] = fresh;
-        // If this row has unsaved edits — preserve input values
         if (dirtyRows.has(fresh.rowIndex)) {
           vehicles[idx].tvscPrice    = old.tvscPrice;
           vehicles[idx].expectedPrice = old.expectedPrice;
         }
-        // Update status badge in DOM silently
-        const stEl = document.getElementById('st-' + fresh.rowIndex);
-        if (stEl) {
-          const done = String(fresh.status).toLowerCase() === 'updated';
-          stEl.textContent = fresh.status || 'Pending';
-          stEl.className   = 'status ' + (done ? 'updated' : 'pending');
-        }
-        // Mobile card status
-        const mcSt = document.getElementById('mc-st-' + fresh.rowIndex);
+        const stEl  = document.getElementById('st-'+fresh.rowIndex);
+        const mcSt  = document.getElementById('mc-st-'+fresh.rowIndex);
+        const done  = String(fresh.status).toLowerCase() === 'updated';
+        if (stEl) { stEl.textContent = fresh.status||'Pending'; stEl.className = 'status '+(done?'updated':'pending'); }
         if (mcSt) {
-          const done = String(fresh.status).toLowerCase() === 'updated';
-          mcSt.textContent = fresh.status || 'Pending';
-          mcSt.className   = 'status ' + (done ? 'updated' : 'pending');
+          mcSt.textContent = fresh.status||'Pending'; mcSt.className = 'status '+(done?'updated':'pending');
           const card = mcSt.closest('.m-card');
-          if (card) card.className = 'm-card ' + (done ? 'is-updated' : 'is-pending');
+          if (card) card.className = 'm-card '+(done?'is-updated':'is-pending');
         }
       } else {
         vehicles.push(fresh);
       }
     });
 
-    // Also fetch pivot if admin
     if (user.role === 'Admin') {
       const pres = await apiGet({ action:'pivot' });
-      if (pres.success) pivotData = pres.pivot;
+      if (pres.success) {
+        pivotData   = pres.pivot;
+        pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
+      }
     }
-
     renderStats();
   } catch(_) {
-    // silent fail — don't disrupt user
+    // silent fail
   } finally {
     if (dot) dot.className = 'refresh-dot';
   }
 }
 
+// ══════════════════════════════════════════════════════════════
+// STICKY RECALC
+// ══════════════════════════════════════════════════════════════
+function recalcSticky() {
+  const header   = document.querySelector('.header');
+  const statsBar = document.querySelector('.stats-bar');
+  const toolbar  = document.querySelector('.toolbar');
+  const pivotTb  = document.getElementById('pivot-toolbar');
+  if (!header || !statsBar) return;
+  const hh = header.getBoundingClientRect().height;
+  const sh = statsBar.getBoundingClientRect().height;
+  statsBar.style.top = hh + 'px';
+  const tbTop = (hh + sh) + 'px';
+  if (toolbar)  toolbar.style.top  = tbTop;
+  if (pivotTb)  pivotTb.style.top  = tbTop;
+}
+window.addEventListener('resize', recalcSticky);
 
+// ══════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════
 let _tt;
 function toast(msg, type='ok') {
   clearTimeout(_tt);
