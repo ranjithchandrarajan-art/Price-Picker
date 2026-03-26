@@ -1463,13 +1463,21 @@ async function silentRefresh() {
     });
 
     if (user.role === 'Admin') {
-      const pres = await apiGet({ action:'pivot' });
+      const fromDate = document.getElementById('pivot-from-date')?.value || '';
+      const pivotParams = { action:'pivot' };
+      if (fromDate) pivotParams.fromDate = fromDate;
+      const pres = await apiGet(pivotParams);
       if (pres.success) {
         pivotData   = pres.pivot;
         pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
       }
     }
-    renderStats();
+    if (_activeTab === 'pivot') {
+      renderPivot();
+      renderPivotStats(pivotTotals);
+    } else {
+      renderStats();
+    }
   } catch(_) {
     // silent fail
   } finally {
