@@ -328,6 +328,11 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .ptable tfoot td{padding:13px 18px;border-top:2px solid var(--border);font-weight:700;background:#f8fafc}
 .ptable tfoot .p-name{color:var(--navy);font-size:13px}
 .p-name{font-weight:600;font-size:14px;color:var(--text)}
+.p-count{font-size:24px;font-weight:800;line-height:1;letter-spacing:-.4px}
+.p-count.total{color:var(--navy)}
+.p-count.updated{color:var(--green)}
+.p-count.pending{color:var(--orange)}
+.p-progress-count{font-size:14px;font-weight:700;color:var(--navy);margin-top:4px}
 .pbar{height:6px;background:var(--border);border-radius:4px;overflow:hidden;width:160px;margin-top:6px}
 .pbar-fill{height:100%;border-radius:4px;transition:.6s;background:linear-gradient(90deg,var(--navy-light),var(--green))}
 .pct{font-weight:700;font-size:14px}
@@ -1001,12 +1006,12 @@ function renderPivot() {
     const col = pct === 100 ? 'var(--green)' : pct > 50 ? 'var(--orange)' : 'var(--red)';
     return `<tr>
       <td class="p-name">${name}</td>
-      <td><strong>${d.total}</strong></td>
-      <td style="color:var(--green)"><strong>${d.updated}</strong></td>
-      <td style="color:var(--orange)"><strong>${d.pending}</strong></td>
+      <td><strong class="p-count total">${d.total}</strong></td>
+      <td><strong class="p-count updated">${d.updated}</strong></td>
+      <td><strong class="p-count pending">${d.pending}</strong></td>
       <td>
         <div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div>
-        <div style="font-size:11px;color:var(--muted);margin-top:3px">${d.updated} of ${d.total}</div>
+        <div class="p-progress-count">${d.updated} of ${d.total}</div>
       </td>
       <td><span class="pct" style="color:${col}">${pct}%</span></td>
     </tr>`;
@@ -1017,12 +1022,12 @@ function renderPivot() {
   const totalCol = totalPct === 100 ? 'var(--green)' : totalPct > 50 ? 'var(--orange)' : 'var(--red)';
   document.getElementById('pivot-tfoot').innerHTML = `<tr>
     <td class="p-name" style="color:var(--navy)">📊 Total</td>
-    <td><strong>${totals.total}</strong></td>
-    <td style="color:var(--green)"><strong>${totals.updated}</strong></td>
-    <td style="color:var(--orange)"><strong>${totals.pending}</strong></td>
+    <td><strong class="p-count total">${totals.total}</strong></td>
+    <td><strong class="p-count updated">${totals.updated}</strong></td>
+    <td><strong class="p-count pending">${totals.pending}</strong></td>
     <td>
       <div class="pbar"><div class="pbar-fill" style="width:${totalPct}%"></div></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:3px">${totals.updated} of ${totals.total}</div>
+      <div class="p-progress-count">${totals.updated} of ${totals.total}</div>
     </td>
     <td><span class="pct" style="color:${totalCol}">${totalPct}%</span></td>
   </tr>`;
