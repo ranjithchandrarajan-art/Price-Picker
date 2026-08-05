@@ -681,7 +681,25 @@ window.addEventListener('DOMContentLoaded', () => {
     const inp = document.getElementById('mob');
     if (inp) { inp.value = cached; inp.style.background = '#f0fdf4'; inp.style.borderColor = '#bbf7d0'; }
   }
+  setDefaultPivotDate();
 });
+
+function getTodayISO() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function setDefaultPivotDate() {
+  const dateInput = document.getElementById('pivot-from-date');
+  if (dateInput && !dateInput.value) {
+    const today = getTodayISO();
+    dateInput.value = today;
+    updatePivotFilterBadge(today);
+  }
+}
 
 // ══════════════════════════════════════════════════════════════
 // API
@@ -728,6 +746,7 @@ async function login() {
     if (user.role === 'Admin') {
       document.getElementById('admin-tabs').style.display = 'flex';
       document.getElementById('ev-flt').style.display     = 'block';
+      setDefaultPivotDate();
     }
     loadVehicles();
   } catch(e) {
@@ -783,7 +802,10 @@ async function loadVehicles() {
   }
   if (user && user.role === 'Admin') {
     try {
-      const pres = await apiGet({ action:'pivot' });
+      const fromDate = document.getElementById('pivot-from-date')?.value || '';
+      const params   = { action:'pivot' };
+      if (fromDate) params.fromDate = fromDate;
+      const pres = await apiGet(params);
       if (pres.success) {
         pivotData   = pres.pivot;
         pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
@@ -962,9 +984,8 @@ function switchTab(el) {
   document.getElementById('tab-pivot').style.display    = tab === 'pivot'    ? 'block' : 'none';
 
   if (tab === 'pivot') {
-    // Load pivot data (with any existing date filter)
-    const fromDate = document.getElementById('pivot-from-date').value;
-    if (Object.keys(pivotData).length === 0 || fromDate) {
+    // Load pivot data if not already loaded
+    if (Object.keys(pivotData).length === 0) {
       loadPivotWithFilter();
     } else {
       renderPivot();
