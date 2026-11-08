@@ -928,9 +928,7 @@ function renderCurrentVehicles() {
     : `Welcome, ${user.name} · ${updated}/${vehicles.length} updated`;
   buildEvalFilter();
   renderStats();
-  // KAMs need to see the full branch case list represented in their summary.
-  // Evaluators and Admin retain the existing Pending-first default.
-  document.getElementById('st-flt').value = user.role === 'KAM' ? '' : 'Pending';
+  document.getElementById('st-flt').value = 'Pending';
   filter();
   requestAnimationFrame(recalcSticky);
 }
