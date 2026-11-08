@@ -89,6 +89,7 @@ input,select{font-family:var(--font)}
 .badge-role{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.3px}
 .badge-role.evaluator{background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2)}
 .badge-role.admin{background:rgba(16,163,74,.25);color:#6ee7b7;border:1px solid rgba(16,163,74,.35)}
+.badge-role.kam{background:rgba(234,88,12,.22);color:#fed7aa;border:1px solid rgba(234,88,12,.4)}
 .btn-signout{color:rgba(255,255,255,.8);font-size:13px;font-weight:500;padding:7px 16px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;transition:.2s;background:transparent}
 .btn-signout:hover{color:var(--white);border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.08)}
 
@@ -749,10 +750,13 @@ async function login() {
     const rb = document.getElementById('h-role');
     rb.textContent = user.role;
     rb.className   = 'badge-role ' + user.role.toLowerCase();
-    if (user.role === 'Admin') {
+    if (user.role === 'Admin' || user.role === 'KAM') {
       document.getElementById('admin-tabs').style.display = 'flex';
       document.getElementById('ev-flt').style.display     = 'block';
       setDefaultPivotDate();
+      if (user.role === 'KAM') {
+        document.getElementById('hdr-sub').textContent = `Welcome, ${user.name} · ${user.branch || 'Branch not assigned'}`;
+      }
     }
     loadVehicles();
   } catch(e) {
@@ -806,10 +810,10 @@ async function loadVehicles() {
   } catch(e) {
     showLoadError(e.message);
   }
-  if (user && user.role === 'Admin') {
+  if (user && (user.role === 'Admin' || user.role === 'KAM')) {
     try {
       const fromDate = document.getElementById('pivot-from-date')?.value || '';
-      const params   = { action:'pivot' };
+      const params   = { action:'pivot', role:user.role, name:user.name };
       if (fromDate) params.fromDate = fromDate;
       const pres = await apiGet(params);
       if (pres.success) {
@@ -931,7 +935,7 @@ async function loadPivotWithFilter() {
 
   try {
     const fromDate = document.getElementById('pivot-from-date').value;
-    const params   = { action: 'pivot' };
+    const params   = { action: 'pivot', role:user?.role || '', name:user?.name || '' };
     if (fromDate) params.fromDate = fromDate;
     const pres = await apiGet(params);
     if (!pres.success) { toast('Failed to load summary data', 'err'); return; }
@@ -1534,9 +1538,9 @@ async function silentRefresh() {
       }
     });
 
-    if (user.role === 'Admin') {
+    if (user.role === 'Admin' || user.role === 'KAM') {
       const fromDate = document.getElementById('pivot-from-date')?.value || '';
-      const pivotParams = { action:'pivot' };
+      const pivotParams = { action:'pivot', role:user.role, name:user.name };
       if (fromDate) pivotParams.fromDate = fromDate;
       const pres = await apiGet(pivotParams);
       if (pres.success) {
