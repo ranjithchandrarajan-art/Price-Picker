@@ -45,6 +45,8 @@ input,select{font-family:var(--font)}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
 #app{min-height:100vh;display:flex;flex-direction:column}
+#startup-screen{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--blue-grad1) 0%,var(--blue-grad2) 100%);color:#fff;font-size:14px;font-weight:600;gap:12px}
+.startup-spinner{width:22px;height:22px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rot .8s linear infinite}
 
 /* ════════════════════════════════════════════════════════════
    LOGIN
@@ -461,6 +463,8 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 <body>
 <div id="app">
 
+<div id="startup-screen"><span class="startup-spinner"></span><span>Restoring your session…</span></div>
+
 <!-- ══ BOTTOM SHEET ═══════════════════════════════════════════ -->
 <div id="sheet-overlay" onclick="closeSheet()"></div>
 <div id="bottom-sheet">
@@ -493,7 +497,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 </div>
 
 <!-- ══ LOGIN ═════════════════════════════════════════════════ -->
-<div id="login-page" style="display:flex;flex:1">
+<div id="login-page" style="display:none;flex:1">
   <div class="login-card">
     <img class="login-logo" id="login-logo-img"
          src="https://drive.google.com/thumbnail?id=1FREFFtAgLbSXJfKGIR_f1OxGt5qR6vMX&sz=w200"
@@ -680,16 +684,124 @@ let pivotData   = {};
 let pivotTotals = { total: 0, updated: 0, pending: 0 };
 let _activeTab  = 'vehicles';
 
-// ── MOBILE NUMBER CACHE ───────────────────────────────────────
+// ── SESSION AND SAFE STORAGE ──────────────────────────────────
+const SESSION_KEY = 'aeval_session_v1';
+const SESSION_IDLE_LIMIT_MS = 2 * 60 * 60 * 1000;
 const LS_MOB_KEY = 'aeval_last_mobile';
-window.addEventListener('DOMContentLoaded', () => {
-  const cached = localStorage.getItem(LS_MOB_KEY);
-  if (cached) {
+const memoryStorage = Object.create(null);
+let _sessionPersistTimer = null;
+
+function safeStorageGet(key) {
+  try { const value = localStorage.getItem(key); if (value !== null) return value; } catch (_) {}
+  try { const value = sessionStorage.getItem(key); if (value !== null) return value; } catch (_) {}
+  return Object.prototype.hasOwnProperty.call(memoryStorage, key) ? memoryStorage[key] : null;
+}
+
+function safeStorageSet(key, value) {
+  const serialized = String(value);
+  try { localStorage.setItem(key, serialized); return true; } catch (_) {}
+  try { sessionStorage.setItem(key, serialized); return true; } catch (_) {}
+  memoryStorage[key] = serialized;
+  return false;
+}
+
+function safeStorageRemove(key) {
+  try { localStorage.removeItem(key); } catch (_) {}
+  try { sessionStorage.removeItem(key); } catch (_) {}
+  delete memoryStorage[key];
+}
+
+function getSavedSession() {
+  try {
+    const raw = safeStorageGet(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) { safeStorageRemove(SESSION_KEY); return null; }
+}
+
+function persistSession(markActivity = false) {
+  if (!user) return;
+  if (!_sessionCache || typeof _sessionCache !== 'object') _sessionCache = {};
+  if (markActivity) _sessionCache.lastActivityAt = Date.now();
+  _sessionCache.user = user;
+  _sessionCache.vehicles = vehicles;
+  _sessionCache.pivotData = pivotData;
+  _sessionCache.pivotTotals = pivotTotals;
+  _sessionCache.pivotFromDate = document.getElementById('pivot-from-date')?.value || '';
+  safeStorageSet(SESSION_KEY, JSON.stringify(_sessionCache));
+}
+
+let _sessionCache = null;
+
+function finishStartup(showLogin) {
+  document.getElementById('login-page').style.display = showLogin ? 'flex' : 'none';
+  document.getElementById('startup-screen').style.display = 'none';
+}
+
+async function startApp() {
+  const cachedMobile = safeStorageGet(LS_MOB_KEY);
+  if (cachedMobile) {
     const inp = document.getElementById('mob');
-    if (inp) { inp.value = cached; inp.style.background = '#f0fdf4'; inp.style.borderColor = '#bbf7d0'; }
+    if (inp) { inp.value = cachedMobile; inp.style.background = '#f0fdf4'; inp.style.borderColor = '#bbf7d0'; }
   }
   setDefaultPivotDate();
-});
+
+  const saved = getSavedSession();
+  const now = Date.now();
+  if (!saved || !saved.user || !saved.user.mobile || !Number.isFinite(Number(saved.lastActivityAt)) ||
+      now - Number(saved.lastActivityAt) > SESSION_IDLE_LIMIT_MS || now < Number(saved.lastActivityAt)) {
+    safeStorageRemove(SESSION_KEY);
+    finishStartup(true);
+    return;
+  }
+
+  _sessionCache = saved;
+  if (saved.pivotFromDate !== undefined) {
+    const pivotDate = document.getElementById('pivot-from-date');
+    if (pivotDate) { pivotDate.value = saved.pivotFromDate; updatePivotFilterBadge(saved.pivotFromDate); }
+  }
+  user = saved.user;
+  vehicles = Array.isArray(saved.vehicles) ? saved.vehicles : [];
+  pivotData = saved.pivotData && typeof saved.pivotData === 'object' ? saved.pivotData : {};
+  pivotTotals = saved.pivotTotals || computeTotalsFromPivot(pivotData);
+  showDashboard();
+  renderCurrentVehicles();
+  if (user.role === 'Admin' || user.role === 'KAM') {
+    if (Object.keys(pivotData).length) { renderPivot(); renderPivotStats(pivotTotals); }
+  }
+  startAutoRefresh();
+  startHintTicker();
+  persistSession(true);
+  finishStartup(false);
+
+  try {
+    const res = await apiGet({ action:'login', mobile:user.mobile });
+    if (!res.success) { logout(); return; }
+    user = res.user;
+    persistSession(true);
+    showDashboard();
+    await loadVehicles(true);
+  } catch (_) {
+    // Keep the cached dashboard available while the network is unavailable.
+  }
+}
+
+window.addEventListener('DOMContentLoaded', startApp);
+
+function queueSessionActivity() {
+  if (!user) return;
+  clearTimeout(_sessionPersistTimer);
+  _sessionPersistTimer = setTimeout(() => persistSession(true), 350);
+}
+
+document.addEventListener('click', queueSessionActivity, true);
+document.addEventListener('keydown', queueSessionActivity, true);
+window.addEventListener('focus', queueSessionActivity);
+window.addEventListener('pagehide', () => persistSession(true));
+document.addEventListener('visibilitychange', () => { if (!document.hidden) queueSessionActivity(); });
+setInterval(() => {
+  if (!user || !_sessionCache) return;
+  if (Date.now() - Number(_sessionCache.lastActivityAt || 0) > SESSION_IDLE_LIMIT_MS) logout();
+}, 60000);
 
 function getTodayISO() {
   const d = new Date();
@@ -741,23 +853,12 @@ async function login() {
     setBtnLoading(false);
     if (!res.success) { showErr(res.message); return; }
     user = res.user;
-    localStorage.setItem(LS_MOB_KEY, mob);
+    safeStorageSet(LS_MOB_KEY, mob);
+    _sessionCache = { user, lastActivityAt:Date.now(), vehicles:[], pivotData:{}, pivotTotals:{total:0,updated:0,pending:0} };
+    vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 };
+    persistSession();
     document.getElementById('login-err').style.display = 'none';
-    document.getElementById('login-page').style.display = 'none';
-    document.getElementById('main-page').style.display  = 'flex';
-    document.getElementById('main-page').style.flexDirection = 'column';
-    requestAnimationFrame(() => requestAnimationFrame(recalcSticky));
-    const rb = document.getElementById('h-role');
-    rb.textContent = user.role;
-    rb.className   = 'badge-role ' + user.role.toLowerCase();
-    if (user.role === 'Admin' || user.role === 'KAM') {
-      document.getElementById('admin-tabs').style.display = 'flex';
-      document.getElementById('ev-flt').style.display     = 'block';
-      setDefaultPivotDate();
-      if (user.role === 'KAM') {
-        document.getElementById('hdr-sub').textContent = `Welcome, ${user.name} · ${user.branch || 'Branch not assigned'}`;
-      }
-    }
+    showDashboard();
     loadVehicles();
   } catch(e) {
     setBtnLoading(false);
@@ -772,10 +873,36 @@ function showErr(msg) {
   const el = document.getElementById('login-err');
   el.textContent = msg; el.style.display = 'block';
 }
+
+function showDashboard() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('main-page').style.display = 'flex';
+  document.getElementById('main-page').style.flexDirection = 'column';
+  const rb = document.getElementById('h-role');
+  rb.textContent = user.role;
+  rb.className = 'badge-role ' + String(user.role || '').toLowerCase();
+  const isManager = user.role === 'Admin' || user.role === 'KAM';
+  document.getElementById('admin-tabs').style.display = isManager ? 'flex' : 'none';
+  document.getElementById('ev-flt').style.display = isManager ? 'block' : 'none';
+  if (isManager) setDefaultPivotDate();
+  if (user.role === 'KAM') document.getElementById('hdr-sub').textContent = `Welcome, ${user.name} · ${user.branch || 'Branch not assigned'}`;
+  requestAnimationFrame(() => requestAnimationFrame(recalcSticky));
+}
+
 function logout() {
   user = null; vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 };
+  _sessionCache = null;
+  safeStorageRemove(SESSION_KEY);
+  safeStorageRemove(LS_MOB_KEY);
   stopAutoRefresh(); stopHintTicker();
   document.getElementById('main-page').style.display  = 'none';
+  document.getElementById('admin-tabs').style.display = 'none';
+  document.getElementById('ev-flt').style.display = 'none';
+  document.getElementById('tbody').innerHTML = '';
+  document.getElementById('m-cards').innerHTML = '';
+  document.getElementById('pivot-tbody').innerHTML = '';
+  document.getElementById('pivot-tfoot').innerHTML = '';
+  document.getElementById('pivot-m-cards').innerHTML = '';
   document.getElementById('login-page').style.display = 'flex';
   document.getElementById('mob').value = '';
   _activeTab = 'vehicles';
@@ -793,22 +920,33 @@ function logout() {
 // ══════════════════════════════════════════════════════════════
 // LOAD VEHICLES
 // ══════════════════════════════════════════════════════════════
-async function loadVehicles() {
-  showLoading();
+function renderCurrentVehicles() {
+  if (!user) return;
+  const updated = vehicles.filter(v => String(v.status).toLowerCase() === 'updated').length;
+  document.getElementById('hdr-sub').textContent = user.role === 'KAM'
+    ? `Welcome, ${user.name} · ${user.branch || 'Branch not assigned'} · ${updated}/${vehicles.length} updated`
+    : `Welcome, ${user.name} · ${updated}/${vehicles.length} updated`;
+  buildEvalFilter();
+  renderStats();
+  // KAMs need to see the full branch case list represented in their summary.
+  // Evaluators and Admin retain the existing Pending-first default.
+  document.getElementById('st-flt').value = user.role === 'KAM' ? '' : 'Pending';
+  filter();
+  requestAnimationFrame(recalcSticky);
+}
+
+async function loadVehicles(quiet = false) {
+  if (!quiet) showLoading();
   try {
     const res = await apiGet({ action:'vehicles', name:user.name, role:user.role });
-    if (!res.success) { showLoadError('Sheet error: ' + res.message); return; }
+    if (!res.success) { if (!quiet) showLoadError('Sheet error: ' + res.message); return; }
     vehicles = res.data;
-    const updated = vehicles.filter(v => String(v.status).toLowerCase() === 'updated').length;
-    document.getElementById('hdr-sub').textContent = `Welcome, ${user.name} · ${updated}/${vehicles.length} updated`;
-    buildEvalFilter();
-    renderStats();
-    document.getElementById('st-flt').value = 'Pending';
-    filter();
+    renderCurrentVehicles();
     startAutoRefresh();
     startHintTicker();
+    persistSession(true);
   } catch(e) {
-    showLoadError(e.message);
+    if (!quiet) showLoadError(e.message);
   }
   if (user && (user.role === 'Admin' || user.role === 'KAM')) {
     try {
@@ -819,6 +957,7 @@ async function loadVehicles() {
       if (pres.success) {
         pivotData   = pres.pivot;
         pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
+        persistSession();
       }
     } catch(_) {}
   }
@@ -941,6 +1080,7 @@ async function loadPivotWithFilter() {
     if (!pres.success) { toast('Failed to load summary data', 'err'); return; }
     pivotData   = pres.pivot;
     pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
+    persistSession(false);
     renderPivot();
     // Update stats bar to reflect filtered pivot totals
     if (_activeTab === 'pivot') renderPivotStats(pivotTotals);
@@ -1455,6 +1595,7 @@ async function sheetSave() {
       v.status = 'Updated'; v.timestamp = res.timestamp; v.timestampMs = res.timestampMs;
       v.startPrice = res.startPrice; v.tvscPrice = tv; v.expectedPrice = ex;
     }
+    persistSession(true);
     // Update DOM
     const stEl = document.getElementById('mc-st-'+ri);
     if (stEl) { stEl.textContent='Updated'; stEl.className='status updated'; }
@@ -1558,6 +1699,7 @@ async function silentRefresh() {
     // silent fail
   } finally {
     if (dot) dot.className = 'refresh-dot';
+    persistSession(false);
   }
 }
 
