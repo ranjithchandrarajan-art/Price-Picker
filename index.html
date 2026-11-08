@@ -288,6 +288,8 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .sheet-input.editing{border-color:var(--navy) !important;background:var(--white) !important}
 .sheet-input.err{border-color:var(--red) !important;background:#fef2f2 !important;animation:shake .3s ease}
 .sheet-input:disabled{opacity:.7;cursor:default}
+.sheet-amount-words{min-height:17px;margin:6px 2px 0;font-size:12px;font-weight:600;color:var(--navy);line-height:1.4}
+.sheet-amount-words:empty{display:none}
 .sheet-start{background:var(--green-bg);border:1px solid var(--green-bdr);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
 .sheet-start-label{font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.6px}
 .sheet-start-val{font-size:18px;font-weight:800;color:var(--green)}
@@ -471,10 +473,12 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
     <div class="sheet-field">
       <label>TVSC Price ₹ <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(Market price)</span></label>
       <input class="sheet-input" type="number" id="sh-tv" placeholder="Enter market price" min="0" oninput="sheetPreview()"/>
+      <div class="sheet-amount-words" id="sh-tv-words" aria-live="polite"></div>
     </div>
     <div class="sheet-field">
       <label>Expected Price ₹ <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(Reserved price)</span></label>
       <input class="sheet-input" type="number" id="sh-ex" placeholder="Enter reserved price" min="0" oninput="sheetPreview()"/>
+      <div class="sheet-amount-words" id="sh-ex-words" aria-live="polite"></div>
     </div>
     <div class="sheet-start" id="sh-start-box" style="display:none">
       <div class="sheet-start-label">Start Price</div>
@@ -1302,6 +1306,8 @@ function openSheet(ri) {
   exEl.disabled = done;
   tvEl.className = 'sheet-input' + (done ? ' filled' : '');
   exEl.className = 'sheet-input' + (done ? ' filled' : '');
+  updateAmountWords('sh-tv', 'sh-tv-words');
+  updateAmountWords('sh-ex', 'sh-ex-words');
 
   // Start price preview
   const startBox = document.getElementById('sh-start-box');
@@ -1364,11 +1370,45 @@ function sheetEnableEdit() {
 function sheetPreview() {
   const tv = document.getElementById('sh-tv')?.value;
   const ex = document.getElementById('sh-ex')?.value;
+  updateAmountWords('sh-tv', 'sh-tv-words');
+  updateAmountWords('sh-ex', 'sh-ex-words');
   const sp = calcStart(ex, tv);
   const box = document.getElementById('sh-start-box');
   const val = document.getElementById('sh-start-val');
   if (sp != null) { box.style.display='flex'; val.textContent='₹ '+sp.toLocaleString(); }
   else box.style.display = 'none';
+}
+
+function amountInIndianWords(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) return '';
+  if (n > 999999999999) return 'Amount is too large to display in words';
+
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  function underThousand(num) {
+    const words = [];
+    if (num >= 100) { words.push(ones[Math.floor(num / 100)], 'Hundred'); num %= 100; }
+    if (num >= 20) { words.push(tens[Math.floor(num / 10)]); num %= 10; }
+    if (num > 0) words.push(ones[num]);
+    return words.join(' ');
+  }
+
+  const parts = [];
+  const units = [[10000000, 'Crore'], [100000, 'Lakh'], [1000, 'Thousand']];
+  let remaining = n;
+  units.forEach(([size, name]) => {
+    const count = Math.floor(remaining / size);
+    if (count) { parts.push(underThousand(count), name); remaining %= size; }
+  });
+  if (remaining) parts.push(underThousand(remaining));
+  return parts.join(' ') + ' Only';
+}
+
+function updateAmountWords(inputId, outputId) {
+  const input = document.getElementById(inputId);
+  const output = document.getElementById(outputId);
+  if (input && output) output.textContent = amountInIndianWords(input.value);
 }
 
 async function sheetSave() {
