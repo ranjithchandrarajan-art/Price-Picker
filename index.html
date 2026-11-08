@@ -890,10 +890,11 @@ function showDashboard() {
 }
 
 function logout() {
+  const rememberedMobile = (user && user.mobile) || document.getElementById('mob').value || safeStorageGet(LS_MOB_KEY) || '';
   user = null; vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 };
   _sessionCache = null;
   safeStorageRemove(SESSION_KEY);
-  safeStorageRemove(LS_MOB_KEY);
+  if (rememberedMobile) safeStorageSet(LS_MOB_KEY, rememberedMobile);
   stopAutoRefresh(); stopHintTicker();
   document.getElementById('main-page').style.display  = 'none';
   document.getElementById('admin-tabs').style.display = 'none';
@@ -904,7 +905,7 @@ function logout() {
   document.getElementById('pivot-tfoot').innerHTML = '';
   document.getElementById('pivot-m-cards').innerHTML = '';
   document.getElementById('login-page').style.display = 'flex';
-  document.getElementById('mob').value = '';
+  document.getElementById('mob').value = rememberedMobile;
   _activeTab = 'vehicles';
   document.getElementById('tab-vehicles').style.display = 'block';
   document.getElementById('tab-pivot').style.display    = 'none';
