@@ -347,7 +347,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 #main-page.pivot-view .pivot-toolbar{position:static;top:auto;z-index:auto;flex-shrink:0}
 #main-page.pivot-view .pivot-scroll{overflow-x:auto;overflow-y:hidden}
 #main-page.pivot-view .ptable thead th{position:static}
-#main-page.pivot-view .ptable tfoot td{position:static;bottom:auto;z-index:auto}
+#main-page.pivot-view .ptable tfoot td{position:sticky;bottom:0;z-index:3}
 .ptable{width:100%;min-width:760px;height:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:13px}
 .ptable th:nth-child(1),.ptable td:nth-child(1){width:24%}
 .ptable th:nth-child(2),.ptable td:nth-child(2){width:19%}
@@ -355,7 +355,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .ptable th:nth-child(4),.ptable td:nth-child(4){width:20%}
 .ptable th:nth-child(5),.ptable td:nth-child(5){width:25%}
 .ptable thead{background:var(--navy)}
-.ptable thead th{position:sticky;top:0;z-index:2;background:var(--navy);padding:15px 20px;text-align:left;font-size:13px;line-height:1.2;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.28);white-space:normal}
+.ptable thead th{position:sticky;top:0;z-index:2;background:var(--navy);height:64px;padding:10px 20px;text-align:left;font-size:13px;line-height:1.2;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.28);white-space:normal;vertical-align:middle}
 .ptable thead th:not(:first-child){text-align:center}
 .ptable tbody tr{height:var(--pivot-row-height,62px)}
 .ptable tbody td+td{border-left:1.5px solid rgba(30,45,120,.42)}
@@ -374,7 +374,8 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .ptable tbody tr:last-child td{border-bottom:0}
 .ptable tbody tr:hover td{background:#f8fafc}
 /* Totals footer row */
-.ptable tfoot td{position:sticky;bottom:0;padding:15px 20px;border-top:2px solid var(--navy-light);font-weight:700;background:var(--navy);color:#fff;z-index:3}
+.ptable tfoot tr{height:64px}
+.ptable tfoot td{position:sticky;bottom:0;height:64px;padding:10px 20px;border-top:2px solid var(--navy-light);font-weight:700;background:var(--navy);color:#fff;z-index:3;vertical-align:middle}
 .ptable tfoot .p-name{color:#fff;font-size:15px;text-transform:uppercase;letter-spacing:.4px}
 .p-name{font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ptable td:not(:first-child){text-align:center}
@@ -1255,7 +1256,8 @@ function switchTab(el) {
 // RENDER PIVOT — desktop table + mobile cards
 // ══════════════════════════════════════════════════════════════
 function renderPivot() {
-  const entries = Object.entries(pivotData);
+  const entries = Object.entries(pivotData)
+    .sort(([, a], [, b]) => (Number(b.total) || 0) - (Number(a.total) || 0));
   const totals  = pivotTotals;
 
   // Row count
