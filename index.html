@@ -179,7 +179,7 @@ input,select{font-family:var(--font)}
   transition:.2s;display:none;
 }
 .btn-clear-date.visible{display:inline-flex;align-items:center;gap:5px}
-.btn-clear-date:hover{border-color:var(--red);color:var(--red);background:#fef2f2}
+.btn-clear-date:hover{border-color:var(--navy);color:var(--navy);background:#eff6ff}
 .pivot-filter-badge{
   display:none;align-items:center;gap:6px;
   background:#eff6ff;border:1px solid #bfdbfe;
@@ -346,6 +346,10 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 #main-page.pivot-view .pivot-wrap{width:100%;margin-inline:auto}
 #main-page.pivot-view .pivot-toolbar{position:static;top:auto;z-index:auto;flex-shrink:0}
 .ptable{width:100%;min-width:760px;height:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:13px}
+.ptable th:nth-child(1),.ptable td:nth-child(1){width:25%}
+.ptable th:nth-child(2),.ptable td:nth-child(2){width:18%}
+.ptable th:nth-child(3),.ptable td:nth-child(3),.ptable th:nth-child(4),.ptable td:nth-child(4){width:13%}
+.ptable th:nth-child(5),.ptable td:nth-child(5){width:31%}
 .ptable thead{background:var(--navy)}
 .ptable thead th{position:sticky;top:0;z-index:2;background:var(--navy);padding:15px 20px;text-align:left;font-size:13px;line-height:1.2;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.28);white-space:nowrap}
 .ptable thead th:not(:first-child){text-align:center}
@@ -357,7 +361,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 /* Totals footer row */
 .ptable tfoot td{position:sticky;bottom:0;padding:15px 20px;border-top:2px solid var(--navy-light);font-weight:700;background:var(--navy);color:#fff;z-index:3}
 .ptable tfoot .p-name{color:#fff;font-size:15px;text-transform:uppercase;letter-spacing:.4px}
-.p-name{font-weight:600;font-size:15px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-name{font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ptable td:not(:first-child){text-align:center}
 .p-count{font-size:21px;font-weight:700;line-height:1;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
 .p-count.total{color:var(--navy)}
@@ -368,6 +372,9 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .ptable tfoot .p-count.updated{color:#86efac}
 .ptable tfoot .p-count.pending{color:#fdba74}
 .p-progress-count{font-size:13px;font-weight:600;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}
+.p-progress-combo{display:flex;align-items:center;justify-content:center;gap:10px;min-width:0}
+.p-progress-combo .pbar{flex:1;width:auto;min-width:44px;max-width:180px;margin:0}
+.p-progress-combo .p-progress-count{margin:0;white-space:nowrap}
 .ptable tfoot .p-progress-count{color:rgba(255,255,255,.82)}
 .pbar{height:7px;background:#e9eef5;border-radius:999px;overflow:hidden;width:min(100%,180px);margin:0 auto}
 .pbar-fill{height:100%;border-radius:999px;transition:width .6s ease;background:linear-gradient(90deg,#3b82f6,#16a34a)}
@@ -654,19 +661,19 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
     <!-- ══ PIVOT / EVALUATOR SUMMARY TAB ════════════════════ -->
     <div id="tab-pivot" style="display:none">
 
-      <!-- Date filter toolbar -->
+      <!-- Month filter toolbar -->
       <div class="pivot-toolbar" id="pivot-toolbar">
         <div class="pivot-date-group">
           <span class="pivot-date-label">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px">
               <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
             </svg>
-            From Date
+            Month
           </span>
-          <input type="date" class="pivot-date-input" id="pivot-from-date"
-                 onchange="onPivotDateChange()"/>
-          <button class="btn-clear-date" id="btn-clear-date" onclick="clearPivotDate()">
-            ✕ Clear
+          <input type="month" class="pivot-date-input" id="pivot-month"
+                 onchange="onPivotMonthChange()"/>
+          <button class="btn-clear-date" id="btn-current-month" onclick="setCurrentPivotMonth()">
+            This Month
           </button>
         </div>
         <div class="pivot-filter-badge" id="pivot-filter-badge">
@@ -685,11 +692,10 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
             <table class="ptable">
               <thead><tr>
                 <th>Evaluator</th>
-                <th>Total</th>
+                <th>Monthly Evaluations</th>
                 <th>✅ Updated</th>
                 <th>⏳ Pending</th>
-                <th>Progress</th>
-                <th>Completion %</th>
+                <th>Progress &amp; Completion</th>
               </tr></thead>
               <tbody id="pivot-tbody"></tbody>
               <tfoot id="pivot-tfoot"></tfoot>
@@ -718,6 +724,8 @@ let user     = null;
 let vehicles = [];
 let pivotData   = {};
 let pivotTotals = { total: 0, updated: 0, pending: 0 };
+let pivotLoadedMonth = '';
+let _pivotTabOpened = false;
 let _activeTab  = 'vehicles';
 
 // ── SESSION AND SAFE STORAGE ──────────────────────────────────
@@ -762,7 +770,8 @@ function persistSession(markActivity = false) {
   _sessionCache.vehicles = vehicles;
   _sessionCache.pivotData = pivotData;
   _sessionCache.pivotTotals = pivotTotals;
-  _sessionCache.pivotFromDate = document.getElementById('pivot-from-date')?.value || '';
+  _sessionCache.pivotMonth = document.getElementById('pivot-month')?.value || '';
+  _sessionCache.pivotLoadedMonth = pivotLoadedMonth;
   safeStorageSet(SESSION_KEY, JSON.stringify(_sessionCache));
 }
 
@@ -779,7 +788,7 @@ async function startApp() {
     const inp = document.getElementById('mob');
     if (inp) { inp.value = cachedMobile; inp.style.background = '#f0fdf4'; inp.style.borderColor = '#bbf7d0'; }
   }
-  setDefaultPivotDate();
+  setDefaultPivotMonth();
 
   const saved = getSavedSession();
   const now = Date.now();
@@ -791,18 +800,19 @@ async function startApp() {
   }
 
   _sessionCache = saved;
-  if (saved.pivotFromDate !== undefined) {
-    const pivotDate = document.getElementById('pivot-from-date');
-    if (pivotDate) { pivotDate.value = saved.pivotFromDate; updatePivotFilterBadge(saved.pivotFromDate); }
-  }
+  const monthInput = document.getElementById('pivot-month');
+  if (monthInput && /^\d{4}-(0[1-9]|1[0-2])$/.test(saved.pivotMonth || '')) monthInput.value = saved.pivotMonth;
+  setDefaultPivotMonth();
+  const selectedMonth = monthInput?.value || '';
+  pivotLoadedMonth = saved.pivotLoadedMonth === selectedMonth ? selectedMonth : '';
   user = saved.user;
   vehicles = Array.isArray(saved.vehicles) ? saved.vehicles : [];
-  pivotData = saved.pivotData && typeof saved.pivotData === 'object' ? saved.pivotData : {};
-  pivotTotals = saved.pivotTotals || computeTotalsFromPivot(pivotData);
+  pivotData = pivotLoadedMonth && saved.pivotData && typeof saved.pivotData === 'object' ? saved.pivotData : {};
+  pivotTotals = pivotLoadedMonth ? (saved.pivotTotals || computeTotalsFromPivot(pivotData)) : { total:0, updated:0, pending:0 };
   showDashboard();
   renderCurrentVehicles();
   if (user.role === 'Admin' || user.role === 'KAM') {
-    if (Object.keys(pivotData).length) { renderPivot(); renderPivotStats(pivotTotals); }
+    if (pivotLoadedMonth) { renderPivot(); renderPivotStats(pivotTotals); }
   }
   startAutoRefresh();
   startHintTicker();
@@ -847,13 +857,14 @@ function getTodayISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function setDefaultPivotDate() {
-  const dateInput = document.getElementById('pivot-from-date');
-  if (dateInput && !dateInput.value) {
-    const today = getTodayISO();
-    dateInput.value = today;
-    updatePivotFilterBadge(today);
-  }
+function getTodayMonthISO() {
+  return getTodayISO().slice(0, 7);
+}
+
+function setDefaultPivotMonth() {
+  const monthInput = document.getElementById('pivot-month');
+  if (monthInput && !monthInput.value) monthInput.value = getTodayMonthISO();
+  updatePivotFilterBadge(monthInput?.value || '');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -890,8 +901,8 @@ async function login() {
     if (!res.success) { showErr(res.message); return; }
     user = res.user;
     safeStorageSet(LS_MOB_KEY, mob);
-    _sessionCache = { user, lastActivityAt:Date.now(), vehicles:[], pivotData:{}, pivotTotals:{total:0,updated:0,pending:0} };
-    vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 };
+    _sessionCache = { user, lastActivityAt:Date.now(), vehicles:[], pivotData:{}, pivotTotals:{total:0,updated:0,pending:0}, pivotMonth:getTodayMonthISO(), pivotLoadedMonth:'' };
+    vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 }; pivotLoadedMonth = ''; _pivotTabOpened = false;
     persistSession();
     document.getElementById('login-err').style.display = 'none';
     showDashboard();
@@ -920,14 +931,14 @@ function showDashboard() {
   const isManager = user.role === 'Admin' || user.role === 'KAM';
   document.getElementById('admin-tabs').style.display = isManager ? 'flex' : 'none';
   document.getElementById('ev-flt').style.display = isManager ? 'block' : 'none';
-  if (isManager) setDefaultPivotDate();
+  if (isManager) setDefaultPivotMonth();
   if (user.role === 'KAM') document.getElementById('hdr-sub').textContent = `Welcome, ${user.name} · ${user.branch || 'Branch not assigned'}`;
   requestAnimationFrame(() => requestAnimationFrame(recalcSticky));
 }
 
 function logout() {
   const rememberedMobile = (user && user.mobile) || document.getElementById('mob').value || safeStorageGet(LS_MOB_KEY) || '';
-  user = null; vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 };
+  user = null; vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 }; pivotLoadedMonth = ''; _pivotTabOpened = false;
   _sessionCache = null;
   safeStorageRemove(SESSION_KEY);
   if (rememberedMobile) safeStorageSet(LS_MOB_KEY, rememberedMobile);
@@ -949,8 +960,8 @@ function logout() {
   const first = document.querySelector('.tab');
   if (first) first.classList.add('active');
   document.getElementById('hdr-sub').textContent = 'Welcome';
-  // reset pivot date filter
-  document.getElementById('pivot-from-date').value = '';
+  // Reset month filter so the next summary view defaults to this month.
+  document.getElementById('pivot-month').value = '';
   updatePivotFilterBadge('');
 }
 
@@ -988,13 +999,14 @@ async function loadVehicles(quiet = false) {
   }
   if (user && (user.role === 'Admin' || user.role === 'KAM')) {
     try {
-      const fromDate = document.getElementById('pivot-from-date')?.value || '';
-      const params   = { action:'pivot', role:user.role, name:user.name };
-      if (fromDate) params.fromDate = fromDate;
+      setDefaultPivotMonth();
+      const month = document.getElementById('pivot-month')?.value || getTodayMonthISO();
+      const params = { action:'pivot', role:user.role, name:user.name, month };
       const pres = await apiGet(params);
-      if (pres.success) {
+      if (pres.success && month === document.getElementById('pivot-month')?.value) {
         pivotData   = pres.pivot;
         pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
+        pivotLoadedMonth = month;
         persistSession();
       }
     } catch(_) {}
@@ -1020,7 +1032,7 @@ function showLoading() {
 // ══════════════════════════════════════════════════════════════
 // STATS BAR
 // Shows vehicle stats when on Vehicles tab.
-// Shows pivot stats (date-filtered) when on Evaluator Summary tab.
+// Shows pivot stats (month-filtered) when on Evaluator Summary tab.
 // ══════════════════════════════════════════════════════════════
 function renderStats() {
   if (_activeTab === 'pivot') {
@@ -1040,9 +1052,9 @@ function renderStats() {
 }
 
 function renderPivotStats(totals) {
-  const hasFilter = !!document.getElementById('pivot-from-date').value;
+  const hasFilter = !!document.getElementById('pivot-month').value;
   setStats(totals.total, totals.pending, totals.updated, hasFilter);
-  document.getElementById('stat-total-lbl').textContent   = 'Total';
+  document.getElementById('stat-total-lbl').textContent   = 'Month Total';
   document.getElementById('stat-pending-lbl').textContent = 'Pending';
   document.getElementById('stat-updated-lbl').textContent = 'Updated';
   requestAnimationFrame(recalcSticky);
@@ -1068,56 +1080,58 @@ function computeTotalsFromPivot(pivot) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// PIVOT DATE FILTER
+// PIVOT MONTH FILTER
 // ══════════════════════════════════════════════════════════════
-function onPivotDateChange() {
-  const val = document.getElementById('pivot-from-date').value;
-  updatePivotFilterBadge(val);
+function onPivotMonthChange() {
+  const month = document.getElementById('pivot-month').value;
+  updatePivotFilterBadge(month);
   loadPivotWithFilter();
 }
 
-function clearPivotDate() {
-  document.getElementById('pivot-from-date').value = '';
-  updatePivotFilterBadge('');
+function setCurrentPivotMonth() {
+  const month = getTodayMonthISO();
+  document.getElementById('pivot-month').value = month;
+  updatePivotFilterBadge(month);
   loadPivotWithFilter();
 }
 
-function updatePivotFilterBadge(dateVal) {
+function updatePivotFilterBadge(monthValue) {
   const badge   = document.getElementById('pivot-filter-badge');
-  const clearBtn = document.getElementById('btn-clear-date');
-  const dateInput = document.getElementById('pivot-from-date');
-  if (dateVal) {
-    // Format for display: "From dd/mm/yyyy"
-    const parts = dateVal.split('-');
-    const display = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateVal;
-    document.getElementById('pivot-filter-badge-text').textContent = `From ${display}`;
+  const currentMonthBtn = document.getElementById('btn-current-month');
+  const monthInput = document.getElementById('pivot-month');
+  if (monthValue) {
+    const [year, month] = monthValue.split('-').map(Number);
+    const display = year && month ? new Date(year, month - 1, 1).toLocaleDateString(undefined, { month:'long', year:'numeric' }) : monthValue;
+    document.getElementById('pivot-filter-badge-text').textContent = `Month · ${display}`;
     badge.classList.add('visible');
-    clearBtn.classList.add('visible');
-    dateInput.classList.add('active');
+    currentMonthBtn.classList.toggle('visible', monthValue !== getTodayMonthISO());
+    monthInput.classList.add('active');
   } else {
     badge.classList.remove('visible');
-    clearBtn.classList.remove('visible');
-    dateInput.classList.remove('active');
+    currentMonthBtn.classList.remove('visible');
+    monthInput.classList.remove('active');
   }
 }
 
 async function loadPivotWithFilter() {
   // Show loading in pivot area
   document.getElementById('pivot-tbody').innerHTML =
-    '<tr><td colspan="6"><div class="loader"><div class="spin"></div><span>Loading…</span></div></td></tr>';
+    '<tr><td colspan="5"><div class="loader"><div class="spin"></div><span>Loading…</span></div></td></tr>';
   document.getElementById('pivot-tfoot').innerHTML = '';
   document.getElementById('pivot-m-cards').innerHTML =
     '<div class="loader"><div class="spin"></div><span>Loading…</span></div>';
   document.getElementById('pivot-row-count').textContent = '';
 
   try {
-    const fromDate = document.getElementById('pivot-from-date').value;
-    const params   = { action: 'pivot', role:user?.role || '', name:user?.name || '' };
-    if (fromDate) params.fromDate = fromDate;
+    setDefaultPivotMonth();
+    const month = document.getElementById('pivot-month').value;
+    const params = { action:'pivot', role:user?.role || '', name:user?.name || '', month };
     const pres = await apiGet(params);
     if (!pres.success) { toast('Failed to load summary data', 'err'); return; }
+    if (month !== document.getElementById('pivot-month').value) return;
     pivotData   = pres.pivot;
     pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
+    pivotLoadedMonth = month;
     persistSession(false);
     renderPivot();
     // Update stats bar to reflect filtered pivot totals
@@ -1125,7 +1139,7 @@ async function loadPivotWithFilter() {
   } catch(e) {
     toast('Network error loading summary', 'err');
     document.getElementById('pivot-tbody').innerHTML =
-      '<tr><td colspan="6"><div class="empty"><div class="empty-ico">⚠️</div><p>Failed to load data</p></div></td></tr>';
+      '<tr><td colspan="5"><div class="empty"><div class="empty-ico">⚠️</div><p>Failed to load data</p></div></td></tr>';
     document.getElementById('pivot-m-cards').innerHTML =
       '<div class="empty"><div class="empty-ico">⚠️</div><p>Failed to load data</p></div>';
   }
@@ -1174,9 +1188,17 @@ function switchTab(el) {
   document.getElementById('tab-pivot').style.display    = tab === 'pivot'    ? 'flex' : 'none';
 
   if (tab === 'pivot') {
+    if (!_pivotTabOpened) {
+      const month = getTodayMonthISO();
+      document.getElementById('pivot-month').value = month;
+      updatePivotFilterBadge(month);
+      _pivotTabOpened = true;
+    }
+    setDefaultPivotMonth();
     requestAnimationFrame(fitPivotTable);
-    // Load pivot data if not already loaded
-    if (Object.keys(pivotData).length === 0) {
+    const selectedMonth = document.getElementById('pivot-month').value;
+    // Load summary data when this month has not been fetched yet.
+    if (pivotLoadedMonth !== selectedMonth) {
       loadPivotWithFilter();
     } else {
       renderPivot();
@@ -1208,8 +1230,9 @@ function renderPivot() {
   }
 
   if (!entries.length) {
-    const emptyHtml = `<div class="pivot-empty"><div class="pivot-empty-ico">📋</div><p>No data for selected period</p></div>`;
-    document.getElementById('pivot-tbody').innerHTML  = `<tr><td colspan="6">${emptyHtml}</td></tr>`;
+    const selectedMonth = document.getElementById('pivot-month').value;
+    const emptyHtml = `<div class="pivot-empty"><div class="pivot-empty-ico">📋</div><p>No evaluations for ${selectedMonth || 'the selected month'}</p></div>`;
+    document.getElementById('pivot-tbody').innerHTML  = `<tr><td colspan="5">${emptyHtml}</td></tr>`;
     document.getElementById('pivot-tfoot').innerHTML  = '';
     document.getElementById('pivot-m-cards').innerHTML = emptyHtml;
     requestAnimationFrame(fitPivotTable);
@@ -1225,11 +1248,13 @@ function renderPivot() {
       <td><strong class="p-count total">${d.total}</strong></td>
       <td><strong class="p-count updated">${d.updated}</strong></td>
       <td><strong class="p-count pending">${d.pending}</strong></td>
-      <td>
-        <div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div>
-        <div class="p-progress-count">${d.updated} of ${d.total}</div>
+      <td class="p-progress-cell">
+        <div class="p-progress-combo">
+          <div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div>
+          <span class="p-progress-count">${d.updated}/${d.total}</span>
+          <span class="pct" style="color:${col}">${pct}%</span>
+        </div>
       </td>
-      <td><span class="pct" style="color:${col}">${pct}%</span></td>
     </tr>`;
   }).join('');
 
@@ -1237,15 +1262,17 @@ function renderPivot() {
   const totalPct = totals.total ? Math.round(totals.updated / totals.total * 100) : 0;
   const totalCol = totalPct === 100 ? 'var(--green)' : totalPct > 50 ? 'var(--orange)' : 'var(--red)';
   document.getElementById('pivot-tfoot').innerHTML = `<tr>
-    <td class="p-name">📊 Total</td>
+    <td class="p-name">📊 All Evaluators</td>
     <td><strong class="p-count total">${totals.total}</strong></td>
     <td><strong class="p-count updated">${totals.updated}</strong></td>
     <td><strong class="p-count pending">${totals.pending}</strong></td>
-    <td>
-      <div class="pbar"><div class="pbar-fill" style="width:${totalPct}%"></div></div>
-      <div class="p-progress-count">${totals.updated} of ${totals.total}</div>
+    <td class="p-progress-cell">
+      <div class="p-progress-combo">
+        <div class="pbar"><div class="pbar-fill" style="width:${totalPct}%"></div></div>
+        <span class="p-progress-count">${totals.updated}/${totals.total}</span>
+        <span class="pct" style="color:${totalCol}">${totalPct}%</span>
+      </div>
     </td>
-    <td><span class="pct" style="color:${totalCol}">${totalPct}%</span></td>
   </tr>`;
 
   // ── Mobile cards ───────────────────────────────────────────
@@ -1756,13 +1783,14 @@ async function silentRefresh() {
     });
 
     if (user.role === 'Admin' || user.role === 'KAM') {
-      const fromDate = document.getElementById('pivot-from-date')?.value || '';
-      const pivotParams = { action:'pivot', role:user.role, name:user.name };
-      if (fromDate) pivotParams.fromDate = fromDate;
+      setDefaultPivotMonth();
+      const month = document.getElementById('pivot-month')?.value || getTodayMonthISO();
+      const pivotParams = { action:'pivot', role:user.role, name:user.name, month };
       const pres = await apiGet(pivotParams);
-      if (pres.success) {
+      if (pres.success && month === document.getElementById('pivot-month')?.value) {
         pivotData   = pres.pivot;
         pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
+        pivotLoadedMonth = month;
       }
     }
     if (_activeTab === 'pivot') {
