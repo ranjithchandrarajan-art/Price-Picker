@@ -78,7 +78,7 @@ input,select{font-family:var(--font)}
 ════════════════════════════════════════════════════════════ */
 #main-page{flex:1;display:none;flex-direction:column}
 #main-page.pivot-view{height:100vh;min-height:0;overflow:hidden}
-#main-page.vehicle-view{height:100vh;min-height:0;overflow:hidden}
+#main-page.vehicle-view{height:100vh;min-height:0;max-height:100vh;flex:0 0 100vh;overflow:hidden}
 .header{
   background:var(--navy);padding:0 24px;height:62px;
   display:flex;align-items:center;justify-content:space-between;
@@ -118,12 +118,12 @@ input,select{font-family:var(--font)}
 /* ── MAIN CONTENT ─────────────────────────────────────────── */
 .main-inner{padding:0;width:100%;flex:1;min-height:0;display:flex;flex-direction:column}
 #main-page.pivot-view .main-inner{overflow:hidden}
-#main-page.vehicle-view .main-inner{overflow:hidden}
+#main-page.vehicle-view .main-inner{height:0;overflow:hidden}
 .table-area{padding:16px 20px}
-#main-page.vehicle-view #tab-vehicles{display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+#main-page.vehicle-view #tab-vehicles{display:flex;flex:1;height:0;flex-direction:column;min-height:0;overflow:hidden}
 #main-page.vehicle-view .toolbar{position:static;top:auto;z-index:auto;flex-shrink:0}
-#main-page.vehicle-view .table-area{padding:12px 20px 0;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-#main-page.vehicle-view .table-wrap{flex:1;min-height:0;overflow:auto}
+#main-page.vehicle-view .table-area{height:0;padding:12px 20px 0;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+#main-page.vehicle-view .table-wrap{height:0;flex:1;min-height:0;overflow:auto}
 #main-page.vehicle-view .table-wrap table{height:100%}
 #main-page.vehicle-view .table-wrap thead th{position:sticky;top:0;z-index:5}
 
