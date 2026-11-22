@@ -444,6 +444,33 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .pivot-empty{padding:48px;text-align:center;color:var(--muted)}
 .pivot-empty-ico{font-size:36px;margin-bottom:10px;opacity:.5}
 
+/* ════════════════════════════════════════════════════════════
+   CUSTOMER SUMMARY TAB
+════════════════════════════════════════════════════════════ */
+#tab-customer{flex:1;flex-direction:column;min-height:0}
+#main-page.customer-view{height:100vh;min-height:0;max-height:100vh;flex:0 0 100vh;overflow:hidden}
+#main-page.customer-view .main-inner{overflow:hidden}
+#main-page.customer-view #tab-customer{overflow:hidden}
+#main-page.customer-view .pivot-toolbar{position:static;top:auto;z-index:auto;flex-shrink:0}
+.cust-area{padding:12px 20px 20px;flex:1;min-height:0;display:flex;flex-direction:column}
+#main-page.customer-view .cust-area{overflow:hidden}
+.cust-wrap{width:100%}
+.cust-scroll{overflow-x:auto;overflow-y:auto}          /* ← only the customer list scrolls */
+.ctable{height:auto;--pivot-row-height:56px}
+.ctable thead th{position:sticky;top:0;z-index:4}      /* header stays while rows scroll */
+.ctable tfoot td{position:sticky;bottom:0;z-index:4}   /* footer stays while rows scroll */
+.cust-pager{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 16px 8px;background:var(--navy);color:#fff;font-size:12.5px;font-weight:600}
+.pg-btns{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pg-btn{min-width:34px;height:32px;padding:0 10px;border-radius:8px;border:1.5px solid rgba(255,255,255,.35);color:#fff;background:transparent;font-size:12.5px;font-weight:700;transition:.15s}
+.pg-btn:hover:not(:disabled){background:rgba(255,255,255,.16)}
+.pg-btn.active{background:#fff;color:var(--navy);border-color:#fff}
+.pg-btn:disabled{opacity:.35;cursor:not-allowed}
+.pg-cur{font-size:12.5px;font-weight:700;padding:0 6px}
+.cust-pager-m{display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-weight:600;color:var(--muted)}
+.cust-pager-m .pg-btn{color:var(--navy);border-color:var(--border2)}
+.cust-pager-m .pg-btn:hover:not(:disabled){background:#eff6ff}
+.cust-pager-m .pg-cur{color:var(--navy)}
+
 /* ── LOADER / EMPTY ─────────────────────────────────────────── */
 .loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px;color:var(--muted);gap:14px}
 .spin{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:rot .7s linear infinite}
@@ -498,6 +525,8 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
   .m-cards{display:flex}
   .pivot-m-cards{display:flex}
   .pivot-totals-card{display:grid} /* always visible */
+  .cust-pager-m{display:flex}
+  .cust-area{padding:10px 12px}
 
   /* Pivot toolbar row count */
   .pivot-row-count{margin-left:0;width:100%}
@@ -618,6 +647,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
     <div class="tabs" id="admin-tabs" style="display:none">
       <div class="tab active" data-tab="vehicles" onclick="switchTab(this)">🚘 Vehicles</div>
       <div class="tab" data-tab="pivot" onclick="switchTab(this)">📊 Evaluator Summary</div>
+      <div class="tab" data-tab="customer" onclick="switchTab(this)">👥 Customer Summary</div>
     </div>
 
     <!-- ══ VEHICLES TAB ══════════════════════════════════════ -->
@@ -723,6 +753,54 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
       </div>
 
     </div><!-- /tab-pivot -->
+
+    <!-- ══ CUSTOMER SUMMARY TAB ═════════════════════════════ -->
+    <div id="tab-customer" style="display:none">
+      <div class="pivot-toolbar" id="cust-toolbar">
+        <div class="pivot-date-group">
+          <span class="pivot-date-label">Month</span>
+          <select class="pivot-date-input" id="cust-month" onchange="onCustFilterChange()"></select>
+          <button class="btn-clear-date" id="btn-cust-current-month" onclick="setCurrentCustMonth()">This Month</button>
+        </div>
+        <div class="pivot-date-group">
+          <span class="pivot-date-label">Evaluator</span>
+          <select class="pivot-date-input" id="cust-eval" onchange="onCustFilterChange()">
+            <option value="">All Evaluators</option>
+          </select>
+        </div>
+        <div class="pivot-filter-badge" id="cust-filter-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+          </svg>
+          <span id="cust-filter-badge-text">Filtered</span>
+        </div>
+        <span class="pivot-row-count" id="cust-row-count"></span>
+      </div>
+
+      <div class="cust-area">
+        <!-- Desktop table: header + footer fixed, only the rows scroll -->
+        <div class="pivot-wrap cust-wrap" id="cust-wrap">
+          <div class="pivot-scroll cust-scroll" id="cust-scroll">
+            <table class="ptable ctable">
+              <thead><tr>
+                <th>Customer</th>
+                <th>Monthly Evaluations</th>
+                <th>✅ Updated</th>
+                <th>⏳ Pending + Carryover</th>
+                <th>Progress &amp; Completion</th>
+              </tr></thead>
+              <tbody id="cust-tbody"></tbody>
+              <tfoot id="cust-tfoot"></tfoot>
+            </table>
+          </div>
+          <div class="cust-pager" id="cust-pager"></div>
+        </div>
+
+        <!-- Mobile cards -->
+        <div class="pivot-m-cards" id="cust-m-cards"></div>
+        <div class="cust-pager-m" id="cust-pager-m"></div>
+      </div>
+    </div><!-- /tab-customer -->
 
   </div><!-- /main-inner -->
 </div><!-- /main-page -->
@@ -936,6 +1014,7 @@ async function login() {
     safeStorageSet(LS_MOB_KEY, mob);
     _sessionCache = { user, lastActivityAt:Date.now(), vehicles:[], pivotData:{}, pivotTotals:{total:0,updated:0,pending:0}, pivotMonth:getTodayMonthISO(), pivotLoadedMonth:'' };
     vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 }; pivotLoadedMonth = ''; pivotAvailableMonths = []; _pivotTabOpened = false;
+    resetCustomerState();
     persistSession();
     document.getElementById('login-err').style.display = 'none';
     showDashboard();
@@ -973,6 +1052,7 @@ function logout() {
   const rememberedMobile = (user && user.mobile) || document.getElementById('mob').value || safeStorageGet(LS_MOB_KEY) || '';
   user = null; vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 }; pivotLoadedMonth = ''; pivotAvailableMonths = []; _pivotTabOpened = false;
   _sessionCache = null;
+  resetCustomerState();
   safeStorageRemove(SESSION_KEY);
   if (rememberedMobile) safeStorageSet(LS_MOB_KEY, rememberedMobile);
   stopAutoRefresh(); stopHintTicker();
@@ -1070,6 +1150,10 @@ function showLoading() {
 // Shows pivot stats (month-filtered) when on Evaluator Summary tab.
 // ══════════════════════════════════════════════════════════════
 function renderStats() {
+  if (_activeTab === 'customer') {
+    renderCustStats(custTotals);
+    return;
+  }
   if (_activeTab === 'pivot') {
     renderPivotStats(pivotTotals);
     return;
@@ -1224,6 +1308,7 @@ function switchTab(el) {
     ? (window.innerWidth > 768 ? 'flex' : 'block')
     : 'none';
   document.getElementById('tab-pivot').style.display    = tab === 'pivot'    ? 'flex' : 'none';
+  document.getElementById('tab-customer').style.display = tab === 'customer' ? 'flex' : 'none';
 
   if (tab === 'pivot') {
     if (!_pivotTabOpened) {
@@ -1241,6 +1326,19 @@ function switchTab(el) {
     } else {
       renderPivot();
       renderPivotStats(pivotTotals);
+    }
+  } else if (tab === 'customer') {
+    if (!_custTabOpened) {
+      document.getElementById('cust-month').value = getTodayMonthISO();
+      _custTabOpened = true;
+    }
+    setDefaultCustMonth();
+    fitPivotTable();
+    if (custLoadedKey !== custKey()) {
+      loadCustomerSummary(true);
+    } else {
+      renderCustomer();
+      renderCustStats(custTotals);
     }
   } else {
     // Restore vehicle stats
@@ -1382,6 +1480,7 @@ function fitPivotTable() {
   if (vehiclesTab && _activeTab === 'vehicles') vehiclesTab.style.display = desktopWidth ? 'flex' : 'block';
   mainPage?.classList.toggle('pivot-view', desktopPivot);
   mainPage?.classList.toggle('vehicle-view', desktopVehicles);
+  mainPage?.classList.toggle('customer-view', _activeTab === 'customer' && desktopWidth);
   if (!pane) return;
   pane.style.height = '';
   if (!desktopPivot) return;
@@ -1454,6 +1553,261 @@ function renderPivotMobileCards(entries, totals) {
   }).join('');
 
   document.getElementById('pivot-m-cards').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// CUSTOMER SUMMARY TAB  (same logic as Evaluator Summary, grouped by customer)
+// ══════════════════════════════════════════════════════════════
+const CUST_PAGE_SIZE = 10;
+let custData = {};
+let custTotals = { total: 0, updated: 0, pending: 0 };
+let custLoadedKey = '';
+let custPage = 1;
+let _custTabOpened = false;
+
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function resetCustomerState() {
+  custData = {}; custTotals = { total:0, updated:0, pending:0 }; custLoadedKey = ''; custPage = 1; _custTabOpened = false;
+  ['cust-tbody','cust-tfoot','cust-m-cards','cust-pager','cust-pager-m'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.innerHTML = '';
+  });
+  const m = document.getElementById('cust-month'); if (m) { m.innerHTML = ''; m.value = ''; }
+  const e = document.getElementById('cust-eval');  if (e) { e.innerHTML = '<option value="">All Evaluators</option>'; e.value = ''; }
+  const t = document.getElementById('tab-customer'); if (t) t.style.display = 'none';
+}
+
+function custKey() {
+  return (document.getElementById('cust-month')?.value || '') + '|' + (document.getElementById('cust-eval')?.value || '');
+}
+
+function populateCustMonthOptions(months, selectedMonth) {
+  const sel = document.getElementById('cust-month');
+  if (!sel) return;
+  const valid = v => /^\d{4}-(0[1-9]|1[0-2])$/.test(String(v || ''));
+  const ordered = [...new Set([getTodayMonthISO(), ...(months || []), selectedMonth].filter(valid))].sort((a, b) => b.localeCompare(a));
+  sel.innerHTML = ordered.map(value => {
+    const [y, m] = value.split('-').map(Number);
+    const label = new Date(y, m - 1, 1).toLocaleDateString(undefined, { month:'long', year:'numeric' });
+    return `<option value="${value}">${label}</option>`;
+  }).join('');
+  sel.value = valid(selectedMonth) && ordered.includes(selectedMonth) ? selectedMonth : getTodayMonthISO();
+}
+
+function populateCustEvaluators(list, selected) {
+  const sel = document.getElementById('cust-eval');
+  if (!sel) return;
+  const names = [...new Set((list || []).filter(Boolean))];
+  if (selected && !names.includes(selected)) names.push(selected);
+  names.sort((a, b) => a.localeCompare(b));
+  sel.innerHTML = '<option value="">All Evaluators</option>' + names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  sel.value = selected || '';
+}
+
+function setDefaultCustMonth() {
+  const m = document.getElementById('cust-month');
+  if (m && !m.options.length) populateCustMonthOptions([], getTodayMonthISO());
+  if (m && !m.value) m.value = getTodayMonthISO();
+  updateCustFilterBadge();
+}
+
+function updateCustFilterBadge() {
+  const month = document.getElementById('cust-month')?.value || '';
+  const ev = document.getElementById('cust-eval')?.value || '';
+  const badge = document.getElementById('cust-filter-badge');
+  const btn = document.getElementById('btn-cust-current-month');
+  if (!badge || !btn) return;
+  if (!month) { badge.classList.remove('visible'); btn.classList.remove('visible'); return; }
+  const [y, m] = month.split('-').map(Number);
+  const display = y && m ? new Date(y, m - 1, 1).toLocaleDateString(undefined, { month:'long', year:'numeric' }) : month;
+  document.getElementById('cust-filter-badge-text').textContent = 'Month · ' + display + (ev ? ' · ' + ev : '');
+  badge.classList.add('visible');
+  btn.classList.toggle('visible', month !== getTodayMonthISO());
+}
+
+function onCustFilterChange() {
+  updateCustFilterBadge();
+  loadCustomerSummary(true);
+}
+
+function setCurrentCustMonth() {
+  document.getElementById('cust-month').value = getTodayMonthISO();
+  onCustFilterChange();
+}
+
+function renderCustStats(totals) {
+  setStats(totals.total, totals.pending, totals.updated, true);
+  document.getElementById('stat-total-lbl').textContent   = 'Month Total';
+  document.getElementById('stat-pending-lbl').textContent = 'Open Pending';
+  document.getElementById('stat-updated-lbl').textContent = 'Updated';
+  requestAnimationFrame(recalcSticky);
+}
+
+async function loadCustomerSummary(resetPage = true) {
+  if (!user) return;
+  if (resetPage) custPage = 1;
+  document.getElementById('cust-tbody').innerHTML =
+    '<tr><td colspan="5"><div class="loader"><div class="spin"></div><span>Loading…</span></div></td></tr>';
+  document.getElementById('cust-tfoot').innerHTML = '';
+  document.getElementById('cust-m-cards').innerHTML = '<div class="loader"><div class="spin"></div><span>Loading…</span></div>';
+  document.getElementById('cust-pager').innerHTML = '';
+  document.getElementById('cust-pager-m').innerHTML = '';
+  document.getElementById('cust-row-count').textContent = '';
+  try {
+    setDefaultCustMonth();
+    const month = document.getElementById('cust-month').value;
+    const evaluator = document.getElementById('cust-eval').value;
+    const key = month + '|' + evaluator;
+    const res = await apiGet({ action:'customerPivot', role:user.role, name:user.name, month, evaluator });
+    if (!res.success) { toast(res.message || 'Failed to load customer summary', 'err'); showCustError(); return; }
+    if (key !== custKey()) return; // a newer filter change is in flight
+    if (Array.isArray(res.availableMonths)) populateCustMonthOptions(res.availableMonths, month);
+    populateCustEvaluators(res.evaluators, evaluator);
+    custData = res.pivot || {};
+    custTotals = res.totals || computeTotalsFromPivot(custData);
+    custLoadedKey = custKey();
+    updateCustFilterBadge();
+    renderCustomer();
+    if (_activeTab === 'customer') renderCustStats(custTotals);
+  } catch (e) {
+    toast('Network error loading customer summary', 'err');
+    showCustError();
+  }
+}
+
+function showCustError() {
+  document.getElementById('cust-tbody').innerHTML =
+    '<tr><td colspan="5"><div class="empty"><div class="empty-ico">⚠️</div><p>Failed to load data</p></div></td></tr>';
+  document.getElementById('cust-m-cards').innerHTML = '<div class="empty"><div class="empty-ico">⚠️</div><p>Failed to load data</p></div>';
+}
+
+function custEntries() {
+  return Object.entries(custData).sort(([an, a], [bn, b]) =>
+    (Number(b.total) || 0) - (Number(a.total) || 0) ||
+    (Number(b.pending) || 0) - (Number(a.pending) || 0) ||
+    an.localeCompare(bn));
+}
+
+function custGoPage(n) {
+  custPage = n;
+  renderCustomer();
+  const sc = document.getElementById('cust-scroll');
+  if (sc) sc.scrollTop = 0;
+  if (window.innerWidth <= 768) window.scrollTo({ top:0 });
+}
+
+function custPagerHtml(page, pages, total, compact) {
+  const from = total ? (page - 1) * CUST_PAGE_SIZE + 1 : 0;
+  const to = Math.min(total, page * CUST_PAGE_SIZE);
+  const info = `<span>Showing ${from}–${to} of ${total} customer${total !== 1 ? 's' : ''}</span>`;
+  if (pages <= 1) return info;
+  let nums = '';
+  if (compact) {
+    nums = `<span class="pg-cur">Page ${page} / ${pages}</span>`;
+  } else {
+    let e = Math.min(pages, Math.max(1, page - 2) + 4);
+    let st = Math.max(1, e - 4);
+    for (let p = st; p <= e; p++) nums += `<button class="pg-btn${p === page ? ' active' : ''}" onclick="custGoPage(${p})">${p}</button>`;
+  }
+  return info + `<div class="pg-btns">
+    <button class="pg-btn" onclick="custGoPage(${page - 1})" ${page <= 1 ? 'disabled' : ''}>‹ Prev</button>${nums}
+    <button class="pg-btn" onclick="custGoPage(${page + 1})" ${page >= pages ? 'disabled' : ''}>Next ›</button>
+  </div>`;
+}
+
+function pctColor(pct) { return pct === 100 ? 'var(--green)' : pct > 50 ? 'var(--orange)' : 'var(--red)'; }
+
+function renderCustomer() {
+  const entries = custEntries();
+  const totals = custTotals;
+  const pages = Math.max(1, Math.ceil(entries.length / CUST_PAGE_SIZE));
+  custPage = Math.min(Math.max(1, custPage), pages);
+  const pageEntries = entries.slice((custPage - 1) * CUST_PAGE_SIZE, custPage * CUST_PAGE_SIZE);
+
+  const countEl = document.getElementById('cust-row-count');
+  if (countEl) countEl.textContent = entries.length ? entries.length + ' customer' + (entries.length !== 1 ? 's' : '') : '';
+
+  if (!entries.length) {
+    const emptyHtml = `<div class="pivot-empty"><div class="pivot-empty-ico">📋</div><p>No evaluations for ${esc(document.getElementById('cust-month').value || 'the selected month')}</p></div>`;
+    document.getElementById('cust-tbody').innerHTML = `<tr><td colspan="5">${emptyHtml}</td></tr>`;
+    document.getElementById('cust-tfoot').innerHTML = '';
+    document.getElementById('cust-m-cards').innerHTML = emptyHtml;
+    document.getElementById('cust-pager').innerHTML = '';
+    document.getElementById('cust-pager-m').innerHTML = '';
+    return;
+  }
+
+  // Desktop rows (current page only)
+  document.getElementById('cust-tbody').innerHTML = pageEntries.map(([name, d]) => {
+    const pct = d.total ? Math.round(d.updated / d.total * 100) : 0;
+    return `<tr>
+      <td class="p-name" title="${esc(name)}">${esc(name)}</td>
+      <td><strong class="p-count total">${d.total}</strong></td>
+      <td><strong class="p-count updated">${d.updated}</strong></td>
+      <td><strong class="p-count pending">${d.pending}</strong></td>
+      <td class="p-progress-cell">
+        ${d.total ? `<div class="p-progress-combo">
+          <div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div>
+          <span class="p-progress-count">${d.updated}/${d.total}</span>
+          <span class="pct" style="color:${pctColor(pct)}">${pct}%</span>
+        </div>` : '<span class="p-progress-count">—</span>'}
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Footer = totals for ALL customers under the current filters (not just this page)
+  const tp = totals.total ? Math.round(totals.updated / totals.total * 100) : 0;
+  document.getElementById('cust-tfoot').innerHTML = `<tr>
+    <td class="p-name">📊 All Customers</td>
+    <td><strong class="p-count total">${totals.total}</strong></td>
+    <td><strong class="p-count updated">${totals.updated}</strong></td>
+    <td><strong class="p-count pending">${totals.pending}</strong></td>
+    <td class="p-progress-cell">
+      ${totals.total ? `<div class="p-progress-combo">
+        <div class="pbar"><div class="pbar-fill" style="width:${tp}%"></div></div>
+        <span class="p-progress-count">${totals.updated}/${totals.total}</span>
+        <span class="pct" style="color:${pctColor(tp)}">${tp}%</span>
+      </div>` : '<span class="p-progress-count">—</span>'}
+    </td>
+  </tr>`;
+
+  // Mobile cards
+  let html = `
+  <div class="pivot-totals-card">
+    <div class="ptc-item"><div class="ptc-num">${totals.total}</div><div class="ptc-lbl">Month Total</div></div>
+    <div class="ptc-item"><div class="ptc-num">${totals.pending}</div><div class="ptc-lbl">Open Pending</div></div>
+    <div class="ptc-item"><div class="ptc-num">${totals.updated}</div><div class="ptc-lbl">Updated</div></div>
+  </div>`;
+  html += pageEntries.map(([name, d]) => {
+    const has = d.total > 0;
+    const pct = d.total ? Math.round(d.updated / d.total * 100) : 0;
+    const bg = has && pct === 100 ? 'border-left:4px solid var(--green);background:var(--green-bg)'
+             : d.pending > 0 ? 'border-left:4px solid var(--orange)' : '';
+    return `
+    <div class="pivot-m-card" style="${bg}">
+      <div class="pivot-m-card-header">
+        <div class="pivot-m-name">${esc(name)}</div>
+        <span class="pivot-m-pct-badge status ${has && pct === 100 ? 'updated' : 'pending'}">${has ? pct + '%' : '—'}</span>
+      </div>
+      <div class="pivot-m-body">
+        <div class="pivot-m-stats">
+          <div class="pivot-m-stat"><div class="pivot-m-stat-num blue">${d.total}</div><div class="pivot-m-stat-lbl">Month</div></div>
+          <div class="pivot-m-stat"><div class="pivot-m-stat-num green">${d.updated}</div><div class="pivot-m-stat-lbl">Updated</div></div>
+          <div class="pivot-m-stat"><div class="pivot-m-stat-num orange">${d.pending}</div><div class="pivot-m-stat-lbl">Open Pending</div></div>
+        </div>
+        ${has ? `<div class="pivot-m-pbar-row">
+          <div class="pivot-m-pbar"><div class="pivot-m-pbar-fill" style="width:${pct}%"></div></div>
+          <span class="pivot-m-pbar-label" style="color:${pctColor(pct)}">${d.updated}/${d.total}</span>
+        </div>` : '<div class="pivot-m-pbar-row"><span class="pivot-m-pbar-label">Carryover only</span></div>'}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('cust-m-cards').innerHTML = html;
+
+  document.getElementById('cust-pager').innerHTML   = custPagerHtml(custPage, pages, entries.length, false);
+  document.getElementById('cust-pager-m').innerHTML = custPagerHtml(custPage, pages, entries.length, true);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1889,9 +2243,25 @@ async function silentRefresh() {
         pivotLoadedMonth = month;
       }
     }
+    if (_activeTab === 'customer' && (user.role === 'Admin' || user.role === 'KAM')) {
+      setDefaultCustMonth();
+      const cm = document.getElementById('cust-month').value;
+      const ce = document.getElementById('cust-eval').value;
+      const cres = await apiGet({ action:'customerPivot', role:user.role, name:user.name, month:cm, evaluator:ce });
+      if (cres.success && cm === document.getElementById('cust-month').value && ce === document.getElementById('cust-eval').value) {
+        if (Array.isArray(cres.availableMonths)) populateCustMonthOptions(cres.availableMonths, cm);
+        populateCustEvaluators(cres.evaluators, ce);
+        custData = cres.pivot || {};
+        custTotals = cres.totals || computeTotalsFromPivot(custData);
+        custLoadedKey = custKey();
+      }
+    }
     if (_activeTab === 'pivot') {
       renderPivot();
       renderPivotStats(pivotTotals);
+    } else if (_activeTab === 'customer') {
+      renderCustomer();
+      renderCustStats(custTotals);
     } else {
       renderStats();
     }
@@ -1918,6 +2288,8 @@ function recalcSticky() {
   const tbTop = (hh + sh) + 'px';
   if (toolbar)  toolbar.style.top  = tbTop;
   if (pivotTb)  pivotTb.style.top  = tbTop;
+  const custTb = document.getElementById('cust-toolbar');
+  if (custTb)   custTb.style.top   = tbTop;
 }
 window.addEventListener('resize', () => {
   recalcSticky();
