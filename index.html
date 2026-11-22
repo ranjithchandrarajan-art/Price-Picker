@@ -330,18 +330,18 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 #tab-pivot{display:flex;flex:1;flex-direction:column;height:100%;min-height:0}
 #main-page.pivot-view #tab-pivot{height:auto;min-height:0;overflow:hidden}
 #main-page.pivot-view .pivot-area{overflow:hidden}
+#main-page.pivot-view .pivot-toolbar{position:relative;top:auto}
 .ptable{width:100%;min-width:760px;height:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:13px}
 .ptable thead{background:var(--navy)}
 .ptable thead th{position:sticky;top:0;z-index:2;background:var(--navy);padding:15px 20px;text-align:left;font-size:13px;line-height:1.2;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.28);white-space:nowrap}
 .ptable thead th:not(:first-child){text-align:center}
 .ptable tbody tr{height:var(--pivot-row-height,62px)}
-.ptable thead th+th,.ptable tbody td+td,.ptable tfoot td+td{border-left:1px solid rgba(30,45,120,.22)}
-.ptable thead th+th,.ptable tfoot td+td{border-left-color:rgba(255,255,255,.24)}
-.ptable tbody td{height:var(--pivot-row-height,62px);padding:8px 16px;border-bottom:1px solid rgba(30,45,120,.22);color:var(--text2);background:var(--white);vertical-align:middle}
+.ptable thead th+th,.ptable tbody td+td,.ptable tfoot td+td{border-left:1px solid rgba(30,45,120,.38)}
+.ptable thead th+th,.ptable tfoot td+td{border-left-color:rgba(255,255,255,.32)}
+.ptable tbody td{height:var(--pivot-row-height,62px);padding:8px 16px;border-bottom:1px solid rgba(30,45,120,.32);color:var(--text2);background:var(--white);vertical-align:middle}
 .ptable tbody tr:last-child td{border-bottom:0}
 .ptable tbody tr:hover td{background:#f8fafc}
 /* Totals footer row */
-.ptable tfoot{position:sticky;bottom:0;z-index:3}
 .ptable tfoot td{position:sticky;bottom:0;padding:15px 20px;border-top:2px solid var(--navy-light);font-weight:700;background:var(--navy);color:#fff;z-index:3}
 .ptable tfoot .p-name{color:#fff;font-size:15px;text-transform:uppercase;letter-spacing:.4px}
 .p-name{font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -354,7 +354,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .ptable tfoot .p-count.total{color:#fff}
 .ptable tfoot .p-count.updated{color:#86efac}
 .ptable tfoot .p-count.pending{color:#fdba74}
-.p-progress-count{font-size:11px;font-weight:600;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}
+.p-progress-count{font-size:13px;font-weight:600;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}
 .ptable tfoot .p-progress-count{color:rgba(255,255,255,.82)}
 .pbar{height:7px;background:#e9eef5;border-radius:999px;overflow:hidden;width:min(100%,180px);margin:0 auto}
 .pbar-fill{height:100%;border-radius:999px;transition:width .6s ease;background:linear-gradient(90deg,#3b82f6,#16a34a)}
@@ -954,7 +954,10 @@ function renderCurrentVehicles() {
   renderStats();
   document.getElementById('st-flt').value = 'Pending';
   filter();
-  requestAnimationFrame(recalcSticky);
+  requestAnimationFrame(() => {
+    recalcSticky();
+    fitPivotTable();
+  });
 }
 
 async function loadVehicles(quiet = false) {
@@ -1168,7 +1171,10 @@ function switchTab(el) {
     // Restore vehicle stats
     renderStats();
   }
-  requestAnimationFrame(recalcSticky);
+  requestAnimationFrame(() => {
+    recalcSticky();
+    fitPivotTable();
+  });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1252,7 +1258,7 @@ function fitPivotTable() {
     const footerHeight = table.tFoot?.getBoundingClientRect().height || 0;
     const rowCount = Math.max(1, body.rows.length);
     const available = Math.max(0, scroll.clientHeight - headerHeight - footerHeight - 2);
-    const rowHeight = Math.max(44, Math.min(92, Math.floor(available / rowCount)));
+    const rowHeight = Math.max(44, Math.floor(available / rowCount));
     table.style.setProperty('--pivot-row-height', rowHeight + 'px');
   });
 }
