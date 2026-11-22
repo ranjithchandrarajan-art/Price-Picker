@@ -326,27 +326,36 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .pivot-wrap{background:var(--white);border-radius:var(--radius-lg);border:3px solid var(--navy);box-shadow:var(--shadow-sm);flex:1;min-height:0;height:100%;display:flex;flex-direction:column;overflow:hidden}
 .pivot-scroll{flex:1;min-height:0;height:100%;overflow:auto}
 #tab-pivot{display:flex;flex:1;flex-direction:column;height:100%;min-height:0}
-.ptable{width:100%;min-width:760px;height:100%;border-collapse:separate;border-spacing:0;font-size:13px}
-.ptable thead{background:#f8fafc}
-.ptable thead th{position:sticky;top:0;z-index:2;background:#f8fafc;padding:15px 20px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid rgba(30,45,120,.38);white-space:nowrap}
+.ptable{width:100%;min-width:760px;height:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:13px}
+.ptable thead{background:var(--navy)}
+.ptable thead th{position:sticky;top:0;z-index:2;background:var(--navy);padding:15px 20px;text-align:left;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid rgba(255,255,255,.28);white-space:nowrap}
 .ptable thead th:not(:first-child){text-align:center}
+.ptable thead th+th,.ptable tfoot td+td{border-left-color:rgba(255,255,255,.24)}
+.ptable tbody tr{height:var(--pivot-row-height,62px)}
 .ptable thead th+th,.ptable tbody td+td,.ptable tfoot td+td{border-left:1px solid rgba(30,45,120,.22)}
-.ptable tbody td{padding:17px 20px;border-bottom:1px solid rgba(30,45,120,.22);color:var(--text2);background:var(--white);vertical-align:middle}
+.ptable tbody td{height:var(--pivot-row-height,62px);padding:8px 16px;border-bottom:1px solid rgba(30,45,120,.22);color:var(--text2);background:var(--white);vertical-align:middle}
 .ptable tbody tr:last-child td{border-bottom:0}
 .ptable tbody tr:hover td{background:#f8fafc}
 /* Totals footer row */
-.ptable tfoot td{position:sticky;bottom:0;padding:15px 20px;border-top:2px solid var(--navy);font-weight:700;background:#f1f5f9;z-index:1}
-.ptable tfoot .p-name{color:var(--navy);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
-.p-name{font-weight:600;font-size:13px;color:var(--text)}
+.ptable tfoot td{position:sticky;bottom:0;padding:15px 20px;border-top:2px solid var(--navy-light);font-weight:700;background:var(--navy);color:#fff;z-index:1}
+.ptable tfoot .p-name{color:#fff;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.p-name{font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ptable td:not(:first-child){text-align:center}
 .p-count{font-size:21px;font-weight:700;line-height:1;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
 .p-count.total{color:var(--navy)}
 .p-count.updated{color:var(--green)}
 .p-count.pending{color:var(--orange)}
+.ptable tfoot .p-count.total{color:#fff}
+.ptable tfoot .p-count.updated{color:#86efac}
+.ptable tfoot .p-count.pending{color:#fdba74}
 .p-progress-count{font-size:11px;font-weight:600;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}
+.ptable tfoot .p-progress-count{color:rgba(255,255,255,.82)}
 .pbar{height:7px;background:#e9eef5;border-radius:999px;overflow:hidden;width:min(100%,180px);margin:0 auto}
 .pbar-fill{height:100%;border-radius:999px;transition:width .6s ease;background:linear-gradient(90deg,#3b82f6,#16a34a)}
 .pct{display:inline-flex;align-items:center;justify-content:center;min-width:58px;padding:6px 10px;border-radius:999px;background:#f1f5f9;font-weight:700;font-size:13px;line-height:1;font-variant-numeric:tabular-nums}
+.ptable tfoot .pbar{background:rgba(255,255,255,.24)}
+.ptable tfoot .pbar-fill{background:#86efac}
+.ptable tfoot .pct{background:#fff;color:var(--navy)!important}
 
 /* ════════════════════════════════════════════════════════════
    PIVOT MOBILE CARDS  ← NEW
@@ -1141,6 +1150,7 @@ function switchTab(el) {
   document.getElementById('tab-pivot').style.display    = tab === 'pivot'    ? 'flex' : 'none';
 
   if (tab === 'pivot') {
+    requestAnimationFrame(fitPivotTable);
     // Load pivot data if not already loaded
     if (Object.keys(pivotData).length === 0) {
       loadPivotWithFilter();
@@ -1175,6 +1185,7 @@ function renderPivot() {
     document.getElementById('pivot-tbody').innerHTML  = `<tr><td colspan="6">${emptyHtml}</td></tr>`;
     document.getElementById('pivot-tfoot').innerHTML  = '';
     document.getElementById('pivot-m-cards').innerHTML = emptyHtml;
+    requestAnimationFrame(fitPivotTable);
     return;
   }
 
@@ -1212,6 +1223,31 @@ function renderPivot() {
 
   // ── Mobile cards ───────────────────────────────────────────
   renderPivotMobileCards(entries, totals);
+  requestAnimationFrame(fitPivotTable);
+}
+
+// Size the summary panel to the remaining viewport and keep evaluator rows even.
+function fitPivotTable() {
+  const pane = document.getElementById('tab-pivot');
+  if (!pane || pane.style.display === 'none') return;
+  if (window.innerWidth <= 768) { pane.style.height = ''; return; }
+
+  const paneTop = pane.getBoundingClientRect().top;
+  pane.style.height = Math.max(0, window.innerHeight - paneTop) + 'px';
+
+  requestAnimationFrame(() => {
+    const scroll = document.querySelector('#pivot-wrap .pivot-scroll');
+    const table = document.querySelector('#pivot-wrap .ptable');
+    const body = document.getElementById('pivot-tbody');
+    if (!scroll || !table || !body || !scroll.clientHeight) return;
+
+    const headerHeight = table.tHead?.getBoundingClientRect().height || 0;
+    const footerHeight = table.tFoot?.getBoundingClientRect().height || 0;
+    const rowCount = Math.max(1, body.rows.length);
+    const available = Math.max(0, scroll.clientHeight - headerHeight - footerHeight - 2);
+    const rowHeight = Math.max(44, Math.min(92, Math.floor(available / rowCount)));
+    table.style.setProperty('--pivot-row-height', rowHeight + 'px');
+  });
 }
 
 function renderPivotMobileCards(entries, totals) {
@@ -1726,7 +1762,10 @@ function recalcSticky() {
   if (toolbar)  toolbar.style.top  = tbTop;
   if (pivotTb)  pivotTb.style.top  = tbTop;
 }
-window.addEventListener('resize', recalcSticky);
+window.addEventListener('resize', () => {
+  recalcSticky();
+  fitPivotTable();
+});
 
 // ══════════════════════════════════════════════════════════════
 // TOAST
