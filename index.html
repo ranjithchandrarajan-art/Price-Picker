@@ -357,6 +357,17 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .ptable tbody tr{height:var(--pivot-row-height,62px)}
 .ptable tbody td+td{border-left:1.5px solid rgba(30,45,120,.42)}
 .ptable tbody td{height:var(--pivot-row-height,62px);padding:8px 16px;border-bottom:1.5px solid rgba(30,45,120,.34);color:var(--text2);background:var(--white);vertical-align:middle}
+.ptable.compact tbody td{padding-top:3px;padding-bottom:3px}
+.ptable.compact .p-count{font-size:16px}
+.ptable.compact .p-progress-combo{gap:6px}
+.ptable.compact .p-progress-count{font-size:11px}
+.ptable.compact .pbar{height:5px}
+.ptable.compact .pct{min-width:44px;padding:4px 6px;font-size:11px}
+.ptable.dense tbody td{padding-top:0;padding-bottom:0}
+.ptable.dense .p-count{font-size:13px}
+.ptable.dense .p-progress-combo{gap:4px}
+.ptable.dense .pbar{height:3px;min-width:28px}
+.ptable.dense .pct{min-width:36px;padding:2px 4px;font-size:11px}
 .ptable tbody tr:last-child td{border-bottom:0}
 .ptable tbody tr:hover td{background:#f8fafc}
 /* Totals footer row */
@@ -1306,8 +1317,10 @@ function fitPivotTable() {
     const footerHeight = table.tFoot?.getBoundingClientRect().height || 0;
     const rowCount = Math.max(1, body.rows.length);
     const available = Math.max(0, scroll.clientHeight - headerHeight - footerHeight);
-    const rowHeight = Math.max(44, available / rowCount);
+    const rowHeight = available / rowCount;
     table.style.setProperty('--pivot-row-height', rowHeight.toFixed(2) + 'px');
+    table.classList.toggle('compact', rowHeight < 52);
+    table.classList.toggle('dense', rowHeight < 34);
   });
 }
 
