@@ -77,7 +77,7 @@ input,select{font-family:var(--font)}
    HEADER
 ════════════════════════════════════════════════════════════ */
 #main-page{flex:1;display:none;flex-direction:column}
-#main-page.pivot-view{height:100vh;min-height:0;overflow:hidden}
+#main-page.pivot-view{height:100vh;min-height:0;max-height:100vh;flex:0 0 100vh;overflow:hidden}
 #main-page.vehicle-view{height:100vh;min-height:0;max-height:100vh;flex:0 0 100vh;overflow:hidden}
 .header{
   background:var(--navy);padding:0 24px;height:62px;
@@ -1317,6 +1317,58 @@ function renderPivot() {
   requestAnimationFrame(fitPivotTable);
 }
 
+let _pivotResizeObserver = null;
+let _pivotObservedScroll = null;
+let _pivotMutationObserver = null;
+let _pivotFitPending = false;
+
+function schedulePivotRowFit() {
+  if (_pivotFitPending) return;
+  _pivotFitPending = true;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    _pivotFitPending = false;
+    fitPivotRows();
+  }));
+}
+
+function observePivotHeight() {
+  const scroll = document.querySelector('#pivot-wrap .pivot-scroll');
+  if (!scroll || !window.ResizeObserver || _pivotObservedScroll === scroll) return;
+  if (_pivotResizeObserver) _pivotResizeObserver.disconnect();
+  _pivotResizeObserver = new ResizeObserver(schedulePivotRowFit);
+  _pivotResizeObserver.observe(scroll);
+  const area = document.querySelector('#tab-pivot .pivot-area');
+  if (area) _pivotResizeObserver.observe(area);
+  _pivotObservedScroll = scroll;
+
+  const body = document.getElementById('pivot-tbody');
+  const footer = document.getElementById('pivot-tfoot');
+  if (body && footer && window.MutationObserver) {
+    if (_pivotMutationObserver) _pivotMutationObserver.disconnect();
+    _pivotMutationObserver = new MutationObserver(schedulePivotRowFit);
+    _pivotMutationObserver.observe(body, { childList:true, subtree:true });
+    _pivotMutationObserver.observe(footer, { childList:true, subtree:true });
+  }
+}
+
+function fitPivotRows() {
+  if (_activeTab !== 'pivot' || window.innerWidth <= 768) return;
+  const scroll = document.querySelector('#pivot-wrap .pivot-scroll');
+  const table = document.querySelector('#pivot-wrap .ptable');
+  const body = document.getElementById('pivot-tbody');
+  if (!scroll || !table || !body || !scroll.clientHeight) return;
+
+  const headerHeight = table.tHead?.getBoundingClientRect().height || 0;
+  const footerHeight = table.tFoot?.getBoundingClientRect().height || 0;
+  const rowCount = Math.max(1, body.rows.length);
+  const available = Math.max(0, scroll.clientHeight - headerHeight - footerHeight);
+  const rowHeight = available / rowCount;
+  if (!Number.isFinite(rowHeight) || rowHeight <= 0) return;
+  table.style.setProperty('--pivot-row-height', rowHeight.toFixed(2) + 'px');
+  table.classList.toggle('compact', rowHeight < 52);
+  table.classList.toggle('dense', rowHeight < 34);
+}
+
 // Size the summary panel to the remaining viewport and keep evaluator rows even.
 function fitPivotTable() {
   const mainPage = document.getElementById('main-page');
@@ -1331,22 +1383,8 @@ function fitPivotTable() {
   if (!pane) return;
   pane.style.height = '';
   if (!desktopPivot) return;
-
-  requestAnimationFrame(() => {
-    const scroll = document.querySelector('#pivot-wrap .pivot-scroll');
-    const table = document.querySelector('#pivot-wrap .ptable');
-    const body = document.getElementById('pivot-tbody');
-    if (!scroll || !table || !body || !scroll.clientHeight) return;
-
-    const headerHeight = table.tHead?.getBoundingClientRect().height || 0;
-    const footerHeight = table.tFoot?.getBoundingClientRect().height || 0;
-    const rowCount = Math.max(1, body.rows.length);
-    const available = Math.max(0, scroll.clientHeight - headerHeight - footerHeight);
-    const rowHeight = available / rowCount;
-    table.style.setProperty('--pivot-row-height', rowHeight.toFixed(2) + 'px');
-    table.classList.toggle('compact', rowHeight < 52);
-    table.classList.toggle('dense', rowHeight < 34);
-  });
+  observePivotHeight();
+  schedulePivotRowFit();
 }
 
 function renderPivotMobileCards(entries, totals) {
@@ -1868,6 +1906,8 @@ window.addEventListener('resize', () => {
   recalcSticky();
   fitPivotTable();
 });
+if (document.fonts?.ready) document.fonts.ready.then(schedulePivotRowFit);
+if (document.fonts?.addEventListener) document.fonts.addEventListener('loadingdone', schedulePivotRowFit);
 
 // ══════════════════════════════════════════════════════════════
 // TOAST
