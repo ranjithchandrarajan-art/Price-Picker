@@ -1465,13 +1465,16 @@ function renderTable(list) {
       '<tr><td colspan="12"><div class="empty"><div class="empty-ico">🚗</div><p>No vehicles found</p></div></td></tr>';
     return;
   }
-  document.getElementById('tbody').innerHTML = list.map((v, i) => {
+  document.getElementById('tbody').innerHTML = list.map((v, i) => tableRowHtml(v, i)).join('');
+}
+
+function tableRowHtml(v, i) {
     const done      = String(v.status).toLowerCase() === 'updated';
     const fuelTrans = [v.fuelType, v.transmission].filter(Boolean).join(' / ') || '—';
     const locked1h  = done && isEditLocked(v);
     const hasTvsc   = v.tvscPrice && Number(v.tvscPrice) > 0;
     const hasExp    = v.expectedPrice && Number(v.expectedPrice) > 0;
-    return `<tr style="cursor:pointer" onclick="openSheet(${v.rowIndex})">
+    return `<tr id="row-${v.rowIndex}" style="cursor:pointer" onclick="openSheet(${v.rowIndex})">
       <td class="td-num">${i+1}</td>
       <td class="td-fixed"><span class="reg">${v.registrationNumber}</span></td>
       <td>
@@ -1497,7 +1500,6 @@ function renderTable(list) {
         }
       </td>
     </tr>`;
-  }).join('');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1753,6 +1755,13 @@ async function sheetSave() {
   errEl.style.display = 'none';
   errEl.style.background = ''; errEl.style.borderColor = ''; errEl.style.color = '';
 
+  const cur = vehicles.find(x => x.rowIndex === ri);
+  if (cur && isEditLocked(cur)) {
+    errEl.textContent = '🔒 Editing locked after 2 minutes.';
+    errEl.style.display = 'block';
+    return;
+  }
+
   if (!tv) { errEl.textContent='TVSC Price is required.'; errEl.style.display='block'; tvEl.focus(); return; }
   if (!ex) { errEl.textContent='Expected Price is required.'; errEl.style.display='block'; exEl.focus(); return; }
   if (Number(tv) > Number(ex)) {
@@ -1779,6 +1788,12 @@ async function sheetSave() {
       v.startPrice = res.startPrice; v.tvscPrice = tv; v.expectedPrice = ex;
     }
     persistSession(true);
+    // Update the desktop table row in place
+    const row = document.getElementById('row-' + ri);
+    if (row && v) {
+      const n = Number(row.querySelector('.td-num')?.textContent) || 1;
+      row.outerHTML = tableRowHtml(v, n - 1);
+    }
     // Update DOM
     const stEl = document.getElementById('mc-st-'+ri);
     if (stEl) { stEl.textContent='Updated'; stEl.className='status updated'; }
