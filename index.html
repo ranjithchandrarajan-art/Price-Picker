@@ -345,6 +345,9 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 #main-page.pivot-view .pivot-area{padding:12px 20px 20px;overflow:hidden;align-items:center}
 #main-page.pivot-view .pivot-wrap{width:100%;margin-inline:auto}
 #main-page.pivot-view .pivot-toolbar{position:static;top:auto;z-index:auto;flex-shrink:0}
+#main-page.pivot-view .pivot-scroll{overflow-x:auto;overflow-y:hidden}
+#main-page.pivot-view .ptable thead th{position:static}
+#main-page.pivot-view .ptable tfoot td{position:static;bottom:auto;z-index:auto}
 .ptable{width:100%;min-width:760px;height:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:13px}
 .ptable th:nth-child(1),.ptable td:nth-child(1){width:24%}
 .ptable th:nth-child(2),.ptable td:nth-child(2){width:19%}
@@ -1126,6 +1129,7 @@ function updatePivotFilterBadge(monthValue) {
 }
 
 async function loadPivotWithFilter() {
+  fitPivotTable();
   // Show loading in pivot area
   document.getElementById('pivot-tbody').innerHTML =
     '<tr><td colspan="5"><div class="loader"><div class="spin"></div><span>Loading…</span></div></td></tr>';
@@ -1133,6 +1137,7 @@ async function loadPivotWithFilter() {
   document.getElementById('pivot-m-cards').innerHTML =
     '<div class="loader"><div class="spin"></div><span>Loading…</span></div>';
   document.getElementById('pivot-row-count').textContent = '';
+  fitPivotTable();
 
   try {
     setDefaultPivotMonth();
@@ -1207,7 +1212,7 @@ function switchTab(el) {
       _pivotTabOpened = true;
     }
     setDefaultPivotMonth();
-    requestAnimationFrame(fitPivotTable);
+    fitPivotTable();
     const selectedMonth = document.getElementById('pivot-month').value;
     // Load summary data when this month has not been fetched yet.
     if (pivotLoadedMonth !== selectedMonth) {
