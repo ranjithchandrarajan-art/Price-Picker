@@ -445,6 +445,34 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .pivot-empty{padding:48px;text-align:center;color:var(--muted)}
 .pivot-empty-ico{font-size:36px;margin-bottom:10px;opacity:.5}
 
+/* ── SEARCHABLE CUSTOMER DROPDOWN (Evaluator Summary filter) ── */
+.cust-dd{position:relative;min-width:220px}
+.cust-dd-btn{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;transition:.2s;user-select:none;outline:none}
+.cust-dd-btn:hover,.cust-dd-btn:focus-visible,.cust-dd.open .cust-dd-btn{border-color:var(--navy);background:var(--white)}
+.cust-dd.has-value .cust-dd-btn{border-color:var(--navy);background:#eff6ff;color:var(--navy)}
+.cust-dd-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cust-dd-x{display:none;width:18px;height:18px;border-radius:50%;background:var(--border2);color:var(--text2);font-size:10px;align-items:center;justify-content:center;flex-shrink:0}
+.cust-dd-x:hover{background:var(--red);color:#fff}
+.cust-dd.has-value .cust-dd-x{display:flex}
+.cust-dd-chev{flex-shrink:0;color:var(--muted);transition:transform .2s}
+.cust-dd.open .cust-dd-chev{transform:rotate(180deg)}
+.cust-dd-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:300;width:300px;max-width:calc(100vw - 24px);background:var(--white);border:1.5px solid var(--navy);border-radius:12px;box-shadow:var(--shadow-lg);overflow:hidden}
+.cust-dd.open .cust-dd-panel{display:block}
+.cust-dd-search{position:relative;padding:10px;border-bottom:1px solid var(--border)}
+.cust-dd-search svg{position:absolute;left:21px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.cust-dd-search input{width:100%;padding:8px 34px 8px 32px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px}
+.cust-dd-search input:focus{outline:none;border-color:var(--navy);background:var(--white)}
+.cust-dd-clear{display:none;position:absolute;right:19px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;background:var(--border2);color:var(--text2);font-size:10px;align-items:center;justify-content:center}
+.cust-dd-clear.visible{display:flex}
+.cust-dd-clear:hover{background:var(--navy);color:#fff}
+.cust-dd-list{max-height:260px;overflow-y:auto;padding:4px}
+.cust-dd-item{padding:8px 10px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cust-dd-item:hover{background:#eff6ff;color:var(--navy)}
+.cust-dd-item.sel{background:var(--navy);color:#fff}
+.cust-dd-item.all{font-weight:700;border-bottom:1px solid var(--border);border-radius:8px 8px 0 0;margin-bottom:2px}
+.cust-dd-empty,.cust-dd-note{padding:14px;text-align:center;color:var(--muted);font-size:12.5px}
+.cust-dd-note{padding:8px;font-size:11px}
+
 /* ════════════════════════════════════════════════════════════
    CUSTOMER SUMMARY TAB
 ════════════════════════════════════════════════════════════ */
@@ -532,6 +560,10 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
   .pivot-m-cards{display:flex}
   .pivot-totals-card{display:grid} /* always visible */
   .cust-pager-m{display:flex}
+  .pv-cust-group{width:100%}
+  .cust-dd{flex:1;min-width:0}
+  .cust-dd-btn{width:100%}
+  .cust-dd-panel{width:100%}
   .cust-area{padding:10px 12px}
 
   /* Pivot toolbar row count */
@@ -727,6 +759,25 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
             This Month
           </button>
         </div>
+        <div class="pivot-date-group pv-cust-group">
+          <span class="pivot-date-label">Customer</span>
+          <div class="cust-dd" id="pv-cust-dd">
+            <div class="cust-dd-btn" id="pv-cust-btn" tabindex="0" role="button" aria-haspopup="listbox"
+                 onclick="toggleCustDropdown(event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCustDropdown(event)}">
+              <span class="cust-dd-text" id="pv-cust-text">All Customers</span>
+              <span class="cust-dd-x" id="pv-cust-x" title="Clear customer filter" onclick="clearPivotCustomer(event)">✕</span>
+              <svg class="cust-dd-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+            <div class="cust-dd-panel" id="pv-cust-panel" onclick="event.stopPropagation()">
+              <div class="cust-dd-search">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" id="pv-cust-q" placeholder="Search customer…" autocomplete="off" oninput="renderCustDropdownList()"/>
+                <span class="cust-dd-clear" id="pv-cust-qclear" title="Clear search" onclick="clearCustDropdownSearch(event)">✕</span>
+              </div>
+              <div class="cust-dd-list" id="pv-cust-list" onclick="onCustDdListClick(event)"></div>
+            </div>
+          </div>
+        </div>
         <div class="pivot-filter-badge" id="pivot-filter-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
@@ -831,6 +882,8 @@ let pivotData   = {};
 let pivotTotals = { total: 0, updated: 0, pending: 0 };
 let pivotLoadedMonth = '';
 let pivotAvailableMonths = [];
+let pivotCustomer  = '';
+let pivotCustomers = [];
 let _pivotTabOpened = false;
 let _activeTab  = 'vehicles';
 
@@ -879,6 +932,8 @@ function persistSession(markActivity = false) {
   _sessionCache.pivotMonth = document.getElementById('pivot-month')?.value || '';
   _sessionCache.pivotLoadedMonth = pivotLoadedMonth;
   _sessionCache.pivotMonths = pivotAvailableMonths;
+  _sessionCache.pivotCustomer = pivotCustomer;
+  _sessionCache.pivotCustomers = pivotCustomers;
   safeStorageSet(SESSION_KEY, JSON.stringify(_sessionCache));
 }
 
@@ -911,6 +966,9 @@ async function startApp() {
   populatePivotMonthOptions(Array.isArray(saved.pivotMonths) ? saved.pivotMonths : [], saved.pivotMonth || getTodayMonthISO());
   const selectedMonth = monthInput?.value || '';
   pivotLoadedMonth = saved.pivotLoadedMonth === selectedMonth ? selectedMonth : '';
+  pivotCustomer = typeof saved.pivotCustomer === 'string' ? saved.pivotCustomer : '';
+  pivotCustomers = Array.isArray(saved.pivotCustomers) ? saved.pivotCustomers : [];
+  updatePivotCustomerUI();
   user = saved.user;
   vehicles = Array.isArray(saved.vehicles) ? saved.vehicles : [];
   pivotData = pivotLoadedMonth && saved.pivotData && typeof saved.pivotData === 'object' ? saved.pivotData : {};
@@ -1028,6 +1086,7 @@ async function login() {
     _sessionCache = { user, lastActivityAt:Date.now(), vehicles:[], pivotData:{}, pivotTotals:{total:0,updated:0,pending:0}, pivotMonth:getTodayMonthISO(), pivotLoadedMonth:'' };
     vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 }; pivotLoadedMonth = ''; pivotAvailableMonths = []; _pivotTabOpened = false;
     resetCustomerState();
+    resetPivotCustomer();
     persistSession();
     document.getElementById('login-err').style.display = 'none';
     showDashboard();
@@ -1066,6 +1125,7 @@ function logout() {
   user = null; vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 }; pivotLoadedMonth = ''; pivotAvailableMonths = []; _pivotTabOpened = false;
   _sessionCache = null;
   resetCustomerState();
+  resetPivotCustomer();
   safeStorageRemove(SESSION_KEY);
   if (rememberedMobile) safeStorageSet(LS_MOB_KEY, rememberedMobile);
   stopAutoRefresh(); stopHintTicker();
@@ -1128,12 +1188,13 @@ async function loadVehicles(quiet = false) {
     try {
       setDefaultPivotMonth();
       const month = document.getElementById('pivot-month')?.value || getTodayMonthISO();
-      const params = { action:'pivot', role:user.role, name:user.name, month };
+      const params = { action:'pivot', role:user.role, name:user.name, month, customer:pivotCustomer };
       const pres = await apiGet(params);
       if (pres.success && month === document.getElementById('pivot-month')?.value) {
         if (Array.isArray(pres.availableMonths)) populatePivotMonthOptions(pres.availableMonths, month);
         pivotData   = pres.pivot;
         pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
+        if (Array.isArray(pres.customers)) setPivotCustomers(pres.customers);
         pivotLoadedMonth = month;
         persistSession();
       }
@@ -1235,7 +1296,7 @@ function updatePivotFilterBadge(monthValue) {
   if (monthValue) {
     const [year, month] = monthValue.split('-').map(Number);
     const display = monthValue === 'overall' ? 'Overall' : year && month ? new Date(year, month - 1, 1).toLocaleDateString(undefined, { month:'long', year:'numeric' }) : monthValue;
-    document.getElementById('pivot-filter-badge-text').textContent = `Month · ${display}`;
+    document.getElementById('pivot-filter-badge-text').textContent = `Month · ${display}` + (pivotCustomer ? ` · ${pivotCustomer}` : '');
     badge.classList.add('visible');
     currentMonthBtn.classList.toggle('visible', monthValue !== getTodayMonthISO());
     monthInput.classList.add('active');
@@ -1260,13 +1321,15 @@ async function loadPivotWithFilter() {
   try {
     setDefaultPivotMonth();
     const month = document.getElementById('pivot-month').value;
-    const params = { action:'pivot', role:user?.role || '', name:user?.name || '', month };
+    const reqCustomer = pivotCustomer;
+    const params = { action:'pivot', role:user?.role || '', name:user?.name || '', month, customer:pivotCustomer };
     const pres = await apiGet(params);
     if (!pres.success) { toast('Failed to load summary data', 'err'); return; }
-    if (month !== document.getElementById('pivot-month').value) return;
+    if (month !== document.getElementById('pivot-month').value || reqCustomer !== pivotCustomer) return;
     if (Array.isArray(pres.availableMonths)) populatePivotMonthOptions(pres.availableMonths, month);
     pivotData   = pres.pivot;
     pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
+        if (Array.isArray(pres.customers)) setPivotCustomers(pres.customers);
     pivotLoadedMonth = month;
     persistSession(false);
     renderPivot();
@@ -1571,6 +1634,92 @@ function renderPivotMobileCards(entries, totals) {
 
   document.getElementById('pivot-m-cards').innerHTML = html;
 }
+
+// ══════════════════════════════════════════════════════════════
+// SEARCHABLE CUSTOMER DROPDOWN  (Evaluator Summary filter)
+// ══════════════════════════════════════════════════════════════
+const CUST_DD_MAX_ITEMS = 200;
+
+function setPivotCustomers(list) {
+  pivotCustomers = [...new Set((list || []).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  if (document.getElementById('pv-cust-dd')?.classList.contains('open')) renderCustDropdownList();
+}
+
+function resetPivotCustomer() {
+  pivotCustomer = ''; pivotCustomers = [];
+  const q = document.getElementById('pv-cust-q'); if (q) q.value = '';
+  closeCustDropdown();
+  updatePivotCustomerUI();
+}
+
+function updatePivotCustomerUI() {
+  const dd = document.getElementById('pv-cust-dd');
+  if (!dd) return;
+  document.getElementById('pv-cust-text').textContent = pivotCustomer || 'All Customers';
+  dd.classList.toggle('has-value', !!pivotCustomer);
+  updatePivotFilterBadge(document.getElementById('pivot-month')?.value || '');
+}
+
+function toggleCustDropdown(e) {
+  if (e) e.stopPropagation();
+  const dd = document.getElementById('pv-cust-dd');
+  if (dd.classList.contains('open')) { closeCustDropdown(); return; }
+  dd.classList.add('open');
+  renderCustDropdownList();
+  setTimeout(() => document.getElementById('pv-cust-q')?.focus(), 30);
+}
+
+function closeCustDropdown() {
+  document.getElementById('pv-cust-dd')?.classList.remove('open');
+}
+
+function renderCustDropdownList() {
+  const input = document.getElementById('pv-cust-q');
+  const q = (input?.value || '').trim().toLowerCase();
+  document.getElementById('pv-cust-qclear').classList.toggle('visible', !!(input && input.value));
+  const matches = pivotCustomers.filter(n => !q || n.toLowerCase().includes(q));
+  const shown = matches.slice(0, CUST_DD_MAX_ITEMS);
+  let html = `<div class="cust-dd-item all${pivotCustomer ? '' : ' sel'}" data-v="">All Customers</div>`;
+  if (!matches.length) {
+    html += `<div class="cust-dd-empty">${pivotCustomers.length ? 'No customers match your search' : 'No customers available'}</div>`;
+  } else {
+    html += shown.map(n => `<div class="cust-dd-item${n === pivotCustomer ? ' sel' : ''}" data-v="${esc(n)}" title="${esc(n)}">${esc(n)}</div>`).join('');
+    if (matches.length > shown.length) html += `<div class="cust-dd-note">Showing first ${shown.length} of ${matches.length} — type to narrow down</div>`;
+  }
+  document.getElementById('pv-cust-list').innerHTML = html;
+}
+
+function clearCustDropdownSearch(e) {
+  if (e) e.stopPropagation();
+  const input = document.getElementById('pv-cust-q');
+  input.value = '';
+  renderCustDropdownList();
+  input.focus();
+}
+
+function onCustDdListClick(e) {
+  const item = e.target.closest('.cust-dd-item');
+  if (item) selectPivotCustomer(item.dataset.v || '');
+}
+
+function selectPivotCustomer(name) {
+  closeCustDropdown();
+  document.getElementById('pv-cust-q').value = '';
+  if (name === pivotCustomer) return;
+  pivotCustomer = name;
+  updatePivotCustomerUI();
+  persistSession(false);
+  loadPivotWithFilter();
+}
+
+function clearPivotCustomer(e) {
+  if (e) e.stopPropagation();
+  if (!pivotCustomer) return;
+  selectPivotCustomer('');
+}
+
+document.addEventListener('click', e => { if (!e.target.closest('#pv-cust-dd')) closeCustDropdown(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCustDropdown(); });
 
 // Labels switch between a single month and the "Overall" (all months) view.
 function periodLabels(overall) {
@@ -2334,12 +2483,13 @@ async function silentRefresh() {
     if (user.role === 'Admin' || user.role === 'KAM') {
       setDefaultPivotMonth();
       const month = document.getElementById('pivot-month')?.value || getTodayMonthISO();
-      const pivotParams = { action:'pivot', role:user.role, name:user.name, month };
+      const pivotParams = { action:'pivot', role:user.role, name:user.name, month, customer:pivotCustomer };
       const pres = await apiGet(pivotParams);
       if (pres.success && month === document.getElementById('pivot-month')?.value) {
         if (Array.isArray(pres.availableMonths)) populatePivotMonthOptions(pres.availableMonths, month);
         pivotData   = pres.pivot;
         pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
+        if (Array.isArray(pres.customers)) setPivotCustomers(pres.customers);
         pivotLoadedMonth = month;
       }
     }
