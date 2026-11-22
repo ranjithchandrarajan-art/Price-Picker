@@ -114,7 +114,7 @@ input,select{font-family:var(--font)}
 .stats-bar.filter-active{background:#eff6ff;border-bottom-color:#bfdbfe}
 
 /* ── MAIN CONTENT ─────────────────────────────────────────── */
-.main-inner{padding:0;width:100%;flex:1;min-height:0}
+.main-inner{padding:0;width:100%;flex:1;min-height:0;display:flex;flex-direction:column}
 .table-area{padding:16px 20px}
 
 /* ── REFRESH CHIP ─────────────────────────────────────────── */
@@ -323,18 +323,19 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 /* ════════════════════════════════════════════════════════════
    PIVOT TABLE (desktop)
 ════════════════════════════════════════════════════════════ */
-.pivot-wrap{background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);flex:1;min-height:0;height:100%;display:flex;flex-direction:column;overflow:hidden}
+.pivot-wrap{background:var(--white);border-radius:var(--radius-lg);border:3px solid var(--navy);box-shadow:var(--shadow-sm);flex:1;min-height:0;height:100%;display:flex;flex-direction:column;overflow:hidden}
 .pivot-scroll{flex:1;min-height:0;height:100%;overflow:auto}
-#tab-pivot{display:flex;flex-direction:column;height:100%;min-height:0}
-.ptable{width:100%;min-width:760px;border-collapse:separate;border-spacing:0;font-size:13px}
+#tab-pivot{display:flex;flex:1;flex-direction:column;height:100%;min-height:0}
+.ptable{width:100%;min-width:760px;height:100%;border-collapse:separate;border-spacing:0;font-size:13px}
 .ptable thead{background:#f8fafc}
-.ptable thead th{position:sticky;top:0;z-index:2;background:#f8fafc;padding:15px 20px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border);white-space:nowrap}
+.ptable thead th{position:sticky;top:0;z-index:2;background:#f8fafc;padding:15px 20px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid rgba(30,45,120,.38);white-space:nowrap}
 .ptable thead th:not(:first-child){text-align:center}
-.ptable tbody td{padding:17px 20px;border-bottom:1px solid #edf1f5;color:var(--text2);background:var(--white);vertical-align:middle}
+.ptable thead th+th,.ptable tbody td+td,.ptable tfoot td+td{border-left:1px solid rgba(30,45,120,.22)}
+.ptable tbody td{padding:17px 20px;border-bottom:1px solid rgba(30,45,120,.22);color:var(--text2);background:var(--white);vertical-align:middle}
 .ptable tbody tr:last-child td{border-bottom:0}
 .ptable tbody tr:hover td{background:#f8fafc}
 /* Totals footer row */
-.ptable tfoot td{position:sticky;bottom:0;padding:15px 20px;border-top:1px solid #cbd5e1;font-weight:700;background:#f1f5f9;z-index:1}
+.ptable tfoot td{position:sticky;bottom:0;padding:15px 20px;border-top:2px solid var(--navy);font-weight:700;background:#f1f5f9;z-index:1}
 .ptable tfoot .p-name{color:var(--navy);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
 .p-name{font-weight:600;font-size:13px;color:var(--text)}
 .ptable td:not(:first-child){text-align:center}
