@@ -685,8 +685,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
             </svg>
             Month
           </span>
-          <input type="month" class="pivot-date-input" id="pivot-month"
-                 onchange="onPivotMonthChange()"/>
+          <select class="pivot-date-input" id="pivot-month" onchange="onPivotMonthChange()"></select>
           <button class="btn-clear-date" id="btn-current-month" onclick="setCurrentPivotMonth()">
             This Month
           </button>
@@ -740,6 +739,7 @@ let vehicles = [];
 let pivotData   = {};
 let pivotTotals = { total: 0, updated: 0, pending: 0 };
 let pivotLoadedMonth = '';
+let pivotAvailableMonths = [];
 let _pivotTabOpened = false;
 let _activeTab  = 'vehicles';
 
@@ -787,6 +787,7 @@ function persistSession(markActivity = false) {
   _sessionCache.pivotTotals = pivotTotals;
   _sessionCache.pivotMonth = document.getElementById('pivot-month')?.value || '';
   _sessionCache.pivotLoadedMonth = pivotLoadedMonth;
+  _sessionCache.pivotMonths = pivotAvailableMonths;
   safeStorageSet(SESSION_KEY, JSON.stringify(_sessionCache));
 }
 
@@ -816,8 +817,7 @@ async function startApp() {
 
   _sessionCache = saved;
   const monthInput = document.getElementById('pivot-month');
-  if (monthInput && /^\d{4}-(0[1-9]|1[0-2])$/.test(saved.pivotMonth || '')) monthInput.value = saved.pivotMonth;
-  setDefaultPivotMonth();
+  populatePivotMonthOptions(Array.isArray(saved.pivotMonths) ? saved.pivotMonths : [], saved.pivotMonth || getTodayMonthISO());
   const selectedMonth = monthInput?.value || '';
   pivotLoadedMonth = saved.pivotLoadedMonth === selectedMonth ? selectedMonth : '';
   user = saved.user;
@@ -876,8 +876,25 @@ function getTodayMonthISO() {
   return getTodayISO().slice(0, 7);
 }
 
+function populatePivotMonthOptions(months, selectedMonth) {
+  const monthSelect = document.getElementById('pivot-month');
+  if (!monthSelect) return;
+  const validMonth = value => /^\d{4}-(0[1-9]|1[0-2])$/.test(String(value || ''));
+  const ordered = [...new Set([getTodayMonthISO(), ...(months || []), selectedMonth].filter(validMonth))]
+    .sort((a, b) => b.localeCompare(a));
+  pivotAvailableMonths = ordered;
+  monthSelect.innerHTML = ordered.map(value => {
+    const [year, month] = value.split('-').map(Number);
+    const label = new Date(year, month - 1, 1).toLocaleDateString(undefined, { month:'long', year:'numeric' });
+    return `<option value="${value}">${label}</option>`;
+  }).join('');
+  monthSelect.value = validMonth(selectedMonth) && ordered.includes(selectedMonth) ? selectedMonth : getTodayMonthISO();
+  updatePivotFilterBadge(monthSelect.value);
+}
+
 function setDefaultPivotMonth() {
   const monthInput = document.getElementById('pivot-month');
+  if (monthInput && !monthInput.options.length) populatePivotMonthOptions(pivotAvailableMonths, getTodayMonthISO());
   if (monthInput && !monthInput.value) monthInput.value = getTodayMonthISO();
   updatePivotFilterBadge(monthInput?.value || '');
 }
@@ -917,7 +934,7 @@ async function login() {
     user = res.user;
     safeStorageSet(LS_MOB_KEY, mob);
     _sessionCache = { user, lastActivityAt:Date.now(), vehicles:[], pivotData:{}, pivotTotals:{total:0,updated:0,pending:0}, pivotMonth:getTodayMonthISO(), pivotLoadedMonth:'' };
-    vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 }; pivotLoadedMonth = ''; _pivotTabOpened = false;
+    vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 }; pivotLoadedMonth = ''; pivotAvailableMonths = []; _pivotTabOpened = false;
     persistSession();
     document.getElementById('login-err').style.display = 'none';
     showDashboard();
@@ -953,7 +970,7 @@ function showDashboard() {
 
 function logout() {
   const rememberedMobile = (user && user.mobile) || document.getElementById('mob').value || safeStorageGet(LS_MOB_KEY) || '';
-  user = null; vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 }; pivotLoadedMonth = ''; _pivotTabOpened = false;
+  user = null; vehicles = []; pivotData = {}; pivotTotals = { total:0, updated:0, pending:0 }; pivotLoadedMonth = ''; pivotAvailableMonths = []; _pivotTabOpened = false;
   _sessionCache = null;
   safeStorageRemove(SESSION_KEY);
   if (rememberedMobile) safeStorageSet(LS_MOB_KEY, rememberedMobile);
@@ -976,6 +993,7 @@ function logout() {
   if (first) first.classList.add('active');
   document.getElementById('hdr-sub').textContent = 'Welcome';
   // Reset month filter so the next summary view defaults to this month.
+  document.getElementById('pivot-month').innerHTML = '';
   document.getElementById('pivot-month').value = '';
   updatePivotFilterBadge('');
 }
@@ -1019,6 +1037,7 @@ async function loadVehicles(quiet = false) {
       const params = { action:'pivot', role:user.role, name:user.name, month };
       const pres = await apiGet(params);
       if (pres.success && month === document.getElementById('pivot-month')?.value) {
+        if (Array.isArray(pres.availableMonths)) populatePivotMonthOptions(pres.availableMonths, month);
         pivotData   = pres.pivot;
         pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
         pivotLoadedMonth = month;
@@ -1146,6 +1165,7 @@ async function loadPivotWithFilter() {
     const pres = await apiGet(params);
     if (!pres.success) { toast('Failed to load summary data', 'err'); return; }
     if (month !== document.getElementById('pivot-month').value) return;
+    if (Array.isArray(pres.availableMonths)) populatePivotMonthOptions(pres.availableMonths, month);
     pivotData   = pres.pivot;
     pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
     pivotLoadedMonth = month;
@@ -1235,7 +1255,7 @@ function switchTab(el) {
 // RENDER PIVOT — desktop table + mobile cards
 // ══════════════════════════════════════════════════════════════
 function renderPivot() {
-  const entries = Object.entries(pivotData).sort((a,b) => b[1].total - a[1].total);
+  const entries = Object.entries(pivotData);
   const totals  = pivotTotals;
 
   // Row count
@@ -1808,6 +1828,7 @@ async function silentRefresh() {
       const pivotParams = { action:'pivot', role:user.role, name:user.name, month };
       const pres = await apiGet(pivotParams);
       if (pres.success && month === document.getElementById('pivot-month')?.value) {
+        if (Array.isArray(pres.availableMonths)) populatePivotMonthOptions(pres.availableMonths, month);
         pivotData   = pres.pivot;
         pivotTotals = pres.totals || computeTotalsFromPivot(pres.pivot);
         pivotLoadedMonth = month;
