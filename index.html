@@ -325,20 +325,20 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 /* ════════════════════════════════════════════════════════════
    PIVOT TABLE (desktop)
 ════════════════════════════════════════════════════════════ */
-.pivot-wrap{background:var(--white);border-radius:var(--radius-lg);border:3px solid var(--navy);box-shadow:var(--shadow-sm);flex:1;min-height:0;height:100%;display:flex;flex-direction:column;overflow:hidden}
-.pivot-scroll{flex:1;min-height:0;height:100%;overflow:auto}
+.pivot-wrap{background:var(--white);border-radius:var(--radius-lg);border:3px solid var(--navy);box-shadow:var(--shadow-sm);flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.pivot-scroll{flex:1;min-height:0;overflow:auto}
 #tab-pivot{display:flex;flex:1;flex-direction:column;height:100%;min-height:0}
 #main-page.pivot-view #tab-pivot{height:auto;min-height:0;overflow:hidden}
-#main-page.pivot-view .pivot-area{overflow:hidden}
-#main-page.pivot-view .pivot-toolbar{position:relative;top:auto}
+#main-page.pivot-view .pivot-area{padding:12px 20px 0;overflow:hidden}
+#main-page.pivot-view .pivot-toolbar{position:static;top:auto;z-index:auto;flex-shrink:0}
 .ptable{width:100%;min-width:760px;height:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:13px}
 .ptable thead{background:var(--navy)}
 .ptable thead th{position:sticky;top:0;z-index:2;background:var(--navy);padding:15px 20px;text-align:left;font-size:13px;line-height:1.2;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.28);white-space:nowrap}
 .ptable thead th:not(:first-child){text-align:center}
 .ptable tbody tr{height:var(--pivot-row-height,62px)}
-.ptable thead th+th,.ptable tbody td+td,.ptable tfoot td+td{border-left:1px solid rgba(30,45,120,.38)}
-.ptable thead th+th,.ptable tfoot td+td{border-left-color:rgba(255,255,255,.32)}
-.ptable tbody td{height:var(--pivot-row-height,62px);padding:8px 16px;border-bottom:1px solid rgba(30,45,120,.32);color:var(--text2);background:var(--white);vertical-align:middle}
+.ptable thead th+th,.ptable tbody td+td,.ptable tfoot td+td{border-left:1.5px solid rgba(30,45,120,.42)}
+.ptable thead th+th,.ptable tfoot td+td{border-left-color:rgba(255,255,255,.38)}
+.ptable tbody td{height:var(--pivot-row-height,62px);padding:8px 16px;border-bottom:1.5px solid rgba(30,45,120,.34);color:var(--text2);background:var(--white);vertical-align:middle}
 .ptable tbody tr:last-child td{border-bottom:0}
 .ptable tbody tr:hover td{background:#f8fafc}
 /* Totals footer row */
@@ -1258,8 +1258,8 @@ function fitPivotTable() {
     const footerHeight = table.tFoot?.getBoundingClientRect().height || 0;
     const rowCount = Math.max(1, body.rows.length);
     const available = Math.max(0, scroll.clientHeight - headerHeight - footerHeight - 2);
-    const rowHeight = Math.max(44, Math.floor(available / rowCount));
-    table.style.setProperty('--pivot-row-height', rowHeight + 'px');
+    const rowHeight = Math.max(44, available / rowCount);
+    table.style.setProperty('--pivot-row-height', rowHeight.toFixed(2) + 'px');
   });
 }
 
