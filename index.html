@@ -346,12 +346,13 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 #main-page.pivot-view .pivot-wrap{width:100%;margin-inline:auto}
 #main-page.pivot-view .pivot-toolbar{position:static;top:auto;z-index:auto;flex-shrink:0}
 .ptable{width:100%;min-width:760px;height:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:13px}
-.ptable th:nth-child(1),.ptable td:nth-child(1){width:25%}
-.ptable th:nth-child(2),.ptable td:nth-child(2){width:18%}
-.ptable th:nth-child(3),.ptable td:nth-child(3),.ptable th:nth-child(4),.ptable td:nth-child(4){width:13%}
-.ptable th:nth-child(5),.ptable td:nth-child(5){width:31%}
+.ptable th:nth-child(1),.ptable td:nth-child(1){width:24%}
+.ptable th:nth-child(2),.ptable td:nth-child(2){width:19%}
+.ptable th:nth-child(3),.ptable td:nth-child(3){width:12%}
+.ptable th:nth-child(4),.ptable td:nth-child(4){width:20%}
+.ptable th:nth-child(5),.ptable td:nth-child(5){width:25%}
 .ptable thead{background:var(--navy)}
-.ptable thead th{position:sticky;top:0;z-index:2;background:var(--navy);padding:15px 20px;text-align:left;font-size:13px;line-height:1.2;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.28);white-space:nowrap}
+.ptable thead th{position:sticky;top:0;z-index:2;background:var(--navy);padding:15px 20px;text-align:left;font-size:13px;line-height:1.2;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.28);white-space:normal}
 .ptable thead th:not(:first-child){text-align:center}
 .ptable tbody tr{height:var(--pivot-row-height,62px)}
 .ptable tbody td+td{border-left:1.5px solid rgba(30,45,120,.42)}
@@ -694,7 +695,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
                 <th>Evaluator</th>
                 <th>Monthly Evaluations</th>
                 <th>✅ Updated</th>
-                <th>⏳ Pending</th>
+                <th>⏳ Pending + Carryover</th>
                 <th>Progress &amp; Completion</th>
               </tr></thead>
               <tbody id="pivot-tbody"></tbody>
@@ -1055,7 +1056,7 @@ function renderPivotStats(totals) {
   const hasFilter = !!document.getElementById('pivot-month').value;
   setStats(totals.total, totals.pending, totals.updated, hasFilter);
   document.getElementById('stat-total-lbl').textContent   = 'Month Total';
-  document.getElementById('stat-pending-lbl').textContent = 'Pending';
+  document.getElementById('stat-pending-lbl').textContent = 'Open Pending';
   document.getElementById('stat-updated-lbl').textContent = 'Updated';
   requestAnimationFrame(recalcSticky);
 }
@@ -1249,11 +1250,11 @@ function renderPivot() {
       <td><strong class="p-count updated">${d.updated}</strong></td>
       <td><strong class="p-count pending">${d.pending}</strong></td>
       <td class="p-progress-cell">
-        <div class="p-progress-combo">
+        ${d.total ? `<div class="p-progress-combo">
           <div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div>
           <span class="p-progress-count">${d.updated}/${d.total}</span>
           <span class="pct" style="color:${col}">${pct}%</span>
-        </div>
+        </div>` : '<span class="p-progress-count">—</span>'}
       </td>
     </tr>`;
   }).join('');
@@ -1267,11 +1268,11 @@ function renderPivot() {
     <td><strong class="p-count updated">${totals.updated}</strong></td>
     <td><strong class="p-count pending">${totals.pending}</strong></td>
     <td class="p-progress-cell">
-      <div class="p-progress-combo">
+      ${totals.total ? `<div class="p-progress-combo">
         <div class="pbar"><div class="pbar-fill" style="width:${totalPct}%"></div></div>
         <span class="p-progress-count">${totals.updated}/${totals.total}</span>
         <span class="pct" style="color:${totalCol}">${totalPct}%</span>
-      </div>
+      </div>` : '<span class="p-progress-count">—</span>'}
     </td>
   </tr>`;
 
@@ -1321,11 +1322,11 @@ function renderPivotMobileCards(entries, totals) {
   <div class="pivot-totals-card">
     <div class="ptc-item">
       <div class="ptc-num">${totals.total}</div>
-      <div class="ptc-lbl">Total</div>
+      <div class="ptc-lbl">Month Total</div>
     </div>
     <div class="ptc-item">
       <div class="ptc-num">${totals.pending}</div>
-      <div class="ptc-lbl">Pending</div>
+      <div class="ptc-lbl">Open Pending</div>
     </div>
     <div class="ptc-item">
       <div class="ptc-num">${totals.updated}</div>
@@ -1335,9 +1336,10 @@ function renderPivotMobileCards(entries, totals) {
 
   // Per-evaluator cards
   html += entries.map(([name, d]) => {
+    const hasMonthlyEvaluations = d.total > 0;
     const pct = d.total ? Math.round(d.updated / d.total * 100) : 0;
     const col = pct === 100 ? 'var(--green)' : pct > 50 ? 'var(--orange)' : 'var(--red)';
-    const bgStyle = pct === 100
+    const bgStyle = hasMonthlyEvaluations && pct === 100
       ? 'border-left:4px solid var(--green);background:var(--green-bg)'
       : d.pending > 0
         ? 'border-left:4px solid var(--orange)'
@@ -1346,13 +1348,13 @@ function renderPivotMobileCards(entries, totals) {
     <div class="pivot-m-card" style="${bgStyle}">
       <div class="pivot-m-card-header">
         <div class="pivot-m-name">${name}</div>
-        <span class="pivot-m-pct-badge status ${pct===100?'updated':'pending'}">${pct}%</span>
+        <span class="pivot-m-pct-badge status ${hasMonthlyEvaluations && pct===100?'updated':'pending'}">${hasMonthlyEvaluations ? pct+'%' : '—'}</span>
       </div>
       <div class="pivot-m-body">
         <div class="pivot-m-stats">
           <div class="pivot-m-stat">
             <div class="pivot-m-stat-num blue">${d.total}</div>
-            <div class="pivot-m-stat-lbl">Total</div>
+            <div class="pivot-m-stat-lbl">Month</div>
           </div>
           <div class="pivot-m-stat">
             <div class="pivot-m-stat-num green">${d.updated}</div>
@@ -1360,15 +1362,15 @@ function renderPivotMobileCards(entries, totals) {
           </div>
           <div class="pivot-m-stat">
             <div class="pivot-m-stat-num orange">${d.pending}</div>
-            <div class="pivot-m-stat-lbl">Pending</div>
+            <div class="pivot-m-stat-lbl">Open Pending</div>
           </div>
         </div>
-        <div class="pivot-m-pbar-row">
+        ${hasMonthlyEvaluations ? `<div class="pivot-m-pbar-row">
           <div class="pivot-m-pbar">
             <div class="pivot-m-pbar-fill" style="width:${pct}%"></div>
           </div>
           <span class="pivot-m-pbar-label" style="color:${col}">${d.updated}/${d.total}</span>
-        </div>
+        </div>` : '<div class="pivot-m-pbar-row"><span class="pivot-m-pbar-label">Carryover only</span></div>'}
       </div>
     </div>`;
   }).join('');
