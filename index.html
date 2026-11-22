@@ -458,8 +458,9 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .cust-wrap{width:100%}
 .cust-scroll{overflow-x:auto;overflow-y:auto}          /* ← only the customer list scrolls */
 .ctable{height:auto;--pivot-row-height:56px}
-.ctable thead th{position:sticky;top:0;z-index:4}      /* header stays while rows scroll */
+.ctable thead th{position:sticky;top:0;z-index:4;height:52px}      /* header stays while rows scroll */
 .ctable tfoot td{position:sticky;bottom:0;z-index:4}   /* footer stays while rows scroll */
+.ctable tfoot tr,.ctable tfoot td{height:52px}
 .cust-pager{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 16px 8px;background:var(--navy);color:#fff;font-size:12.5px;font-weight:600}
 .pg-btns{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .pg-btn{min-width:34px;height:32px;padding:0 10px;border-radius:8px;border:1.5px solid rgba(255,255,255,.35);color:#fff;background:transparent;font-size:12.5px;font-weight:700;transition:.15s}
@@ -1482,6 +1483,7 @@ function fitPivotTable() {
   mainPage?.classList.toggle('pivot-view', desktopPivot);
   mainPage?.classList.toggle('vehicle-view', desktopVehicles);
   mainPage?.classList.toggle('customer-view', _activeTab === 'customer' && desktopWidth);
+  if (_activeTab === 'customer' && desktopWidth) { observeCustHeight(); scheduleCustRowFit(); }
   if (!pane) return;
   pane.style.height = '';
   if (!desktopPivot) return;
@@ -1691,6 +1693,44 @@ function custEntries() {
     an.localeCompare(bn));
 }
 
+// Dynamic row height: size the 10 rows of a page to exactly fill the space between the fixed header and footer.
+let _custRO = null;
+let _custFitPending = false;
+
+function scheduleCustRowFit() {
+  if (_custFitPending) return;
+  _custFitPending = true;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    _custFitPending = false;
+    fitCustRows();
+  }));
+}
+
+function observeCustHeight() {
+  if (_custRO || !window.ResizeObserver) return;
+  const scroll = document.getElementById('cust-scroll');
+  if (!scroll) return;
+  _custRO = new ResizeObserver(scheduleCustRowFit);
+  _custRO.observe(scroll);
+  const area = document.querySelector('#tab-customer .cust-area');
+  if (area) _custRO.observe(area);
+}
+
+function fitCustRows() {
+  if (_activeTab !== 'customer' || window.innerWidth <= 768) return;
+  const scroll = document.getElementById('cust-scroll');
+  const table = document.querySelector('#cust-wrap .ctable');
+  if (!scroll || !table || !scroll.clientHeight) return;
+  const headerH = table.tHead?.getBoundingClientRect().height || 0;
+  const footerH = table.tFoot?.getBoundingClientRect().height || 0;
+  const available = scroll.clientHeight - headerH - footerH - 1;
+  const MIN_ROW = 30; // below this the rows stop shrinking and the list scrolls internally
+  const rowH = Math.max(MIN_ROW, Math.floor(available / CUST_PAGE_SIZE * 100) / 100);
+  table.style.setProperty('--pivot-row-height', rowH + 'px');
+  table.classList.toggle('compact', rowH < 52);
+  table.classList.toggle('dense', rowH < 34);
+}
+
 function custGoPage(n) {
   custPage = n;
   renderCustomer();
@@ -1809,6 +1849,7 @@ function renderCustomer() {
 
   document.getElementById('cust-pager').innerHTML   = custPagerHtml(custPage, pages, entries.length, false);
   document.getElementById('cust-pager-m').innerHTML = custPagerHtml(custPage, pages, entries.length, true);
+  scheduleCustRowFit();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2296,7 +2337,7 @@ window.addEventListener('resize', () => {
   recalcSticky();
   fitPivotTable();
 });
-if (document.fonts?.ready) document.fonts.ready.then(schedulePivotRowFit);
+if (document.fonts?.ready) document.fonts.ready.then(() => { schedulePivotRowFit(); scheduleCustRowFit(); });
 if (document.fonts?.addEventListener) document.fonts.addEventListener('loadingdone', schedulePivotRowFit);
 
 // ══════════════════════════════════════════════════════════════
