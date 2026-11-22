@@ -743,9 +743,9 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
             <table class="ptable">
               <thead><tr>
                 <th>Evaluator</th>
-                <th>Monthly Evaluations</th>
+                <th id="ph-total">Monthly Evaluations</th>
                 <th>✅ Updated</th>
-                <th>⏳ Pending + Carryover</th>
+                <th id="ph-pending">⏳ Pending + Carryover</th>
                 <th>Progress &amp; Completion</th>
               </tr></thead>
               <tbody id="pivot-tbody"></tbody>
@@ -796,9 +796,9 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
             <table class="ptable ctable">
               <thead><tr>
                 <th>Customer</th>
-                <th>Monthly Evaluations</th>
+                <th id="ch-total">Monthly Evaluations</th>
                 <th>✅ Updated</th>
-                <th>⏳ Pending + Carryover</th>
+                <th id="ch-pending">⏳ Pending + Carryover</th>
                 <th>Progress &amp; Completion</th>
               </tr></thead>
               <tbody id="cust-tbody"></tbody>
@@ -974,12 +974,13 @@ function populatePivotMonthOptions(months, selectedMonth) {
   const ordered = [...new Set([getTodayMonthISO(), ...(months || []), selectedMonth].filter(validMonth))]
     .sort((a, b) => b.localeCompare(a));
   pivotAvailableMonths = ordered;
-  monthSelect.innerHTML = ordered.map(value => {
+  monthSelect.innerHTML = '<option value="overall">Overall</option>' + ordered.map(value => {
     const [year, month] = value.split('-').map(Number);
     const label = new Date(year, month - 1, 1).toLocaleDateString(undefined, { month:'long', year:'numeric' });
     return `<option value="${value}">${label}</option>`;
   }).join('');
-  monthSelect.value = validMonth(selectedMonth) && ordered.includes(selectedMonth) ? selectedMonth : getTodayMonthISO();
+  monthSelect.value = selectedMonth === 'overall' ? 'overall'
+    : validMonth(selectedMonth) && ordered.includes(selectedMonth) ? selectedMonth : getTodayMonthISO();
   updatePivotFilterBadge(monthSelect.value);
 }
 
@@ -1185,8 +1186,9 @@ function renderStats() {
 function renderPivotStats(totals) {
   const hasFilter = !!document.getElementById('pivot-month').value;
   setStats(totals.total, totals.pending, totals.updated, hasFilter);
-  document.getElementById('stat-total-lbl').textContent   = 'Month Total';
-  document.getElementById('stat-pending-lbl').textContent = 'Open Pending';
+  const L = periodLabels(document.getElementById('pivot-month').value === 'overall');
+  document.getElementById('stat-total-lbl').textContent   = L.total;
+  document.getElementById('stat-pending-lbl').textContent = L.pending;
   document.getElementById('stat-updated-lbl').textContent = 'Updated';
   requestAnimationFrame(recalcSticky);
 }
@@ -1232,7 +1234,7 @@ function updatePivotFilterBadge(monthValue) {
   const monthInput = document.getElementById('pivot-month');
   if (monthValue) {
     const [year, month] = monthValue.split('-').map(Number);
-    const display = year && month ? new Date(year, month - 1, 1).toLocaleDateString(undefined, { month:'long', year:'numeric' }) : monthValue;
+    const display = monthValue === 'overall' ? 'Overall' : year && month ? new Date(year, month - 1, 1).toLocaleDateString(undefined, { month:'long', year:'numeric' }) : monthValue;
     document.getElementById('pivot-filter-badge-text').textContent = `Month · ${display}`;
     badge.classList.add('visible');
     currentMonthBtn.classList.toggle('visible', monthValue !== getTodayMonthISO());
@@ -1366,6 +1368,7 @@ function switchTab(el) {
 // RENDER PIVOT — desktop table + mobile cards
 // ══════════════════════════════════════════════════════════════
 function renderPivot() {
+  applyPeriodHeaders('ph', document.getElementById('pivot-month').value === 'overall');
   const entries = Object.entries(pivotData)
     .sort(([, a], [, b]) => (Number(b.total) || 0) - (Number(a.total) || 0));
   const totals  = pivotTotals;
@@ -1380,7 +1383,7 @@ function renderPivot() {
 
   if (!entries.length) {
     const selectedMonth = document.getElementById('pivot-month').value;
-    const emptyHtml = `<div class="pivot-empty"><div class="pivot-empty-ico">📋</div><p>No evaluations for ${selectedMonth || 'the selected month'}</p></div>`;
+    const emptyHtml = `<div class="pivot-empty"><div class="pivot-empty-ico">📋</div><p>No evaluations for ${selectedMonth === 'overall' ? 'any period' : (selectedMonth || 'the selected month')}</p></div>`;
     document.getElementById('pivot-tbody').innerHTML  = `<tr><td colspan="5">${emptyHtml}</td></tr>`;
     document.getElementById('pivot-tfoot').innerHTML  = '';
     document.getElementById('pivot-m-cards').innerHTML = emptyHtml;
@@ -1505,6 +1508,7 @@ function renderPivotMobileCards(entries, totals) {
   const totalPct = totals.total ? Math.round(totals.updated / totals.total * 100) : 0;
   const totalCol = totalPct === 100 ? 'var(--green)' : totalPct > 50 ? 'var(--orange)' : 'var(--red)';
 
+  const L = periodLabels(document.getElementById('pivot-month').value === 'overall');
   let html = '';
 
   // Totals summary card (navy gradient)
@@ -1512,11 +1516,11 @@ function renderPivotMobileCards(entries, totals) {
   <div class="pivot-totals-card">
     <div class="ptc-item">
       <div class="ptc-num">${totals.total}</div>
-      <div class="ptc-lbl">Month Total</div>
+      <div class="ptc-lbl">${L.total}</div>
     </div>
     <div class="ptc-item">
       <div class="ptc-num">${totals.pending}</div>
-      <div class="ptc-lbl">Open Pending</div>
+      <div class="ptc-lbl">${L.pending}</div>
     </div>
     <div class="ptc-item">
       <div class="ptc-num">${totals.updated}</div>
@@ -1544,7 +1548,7 @@ function renderPivotMobileCards(entries, totals) {
         <div class="pivot-m-stats">
           <div class="pivot-m-stat">
             <div class="pivot-m-stat-num blue">${d.total}</div>
-            <div class="pivot-m-stat-lbl">Month</div>
+            <div class="pivot-m-stat-lbl">${L.month}</div>
           </div>
           <div class="pivot-m-stat">
             <div class="pivot-m-stat-num green">${d.updated}</div>
@@ -1552,7 +1556,7 @@ function renderPivotMobileCards(entries, totals) {
           </div>
           <div class="pivot-m-stat">
             <div class="pivot-m-stat-num orange">${d.pending}</div>
-            <div class="pivot-m-stat-lbl">Open Pending</div>
+            <div class="pivot-m-stat-lbl">${L.pending}</div>
           </div>
         </div>
         ${hasMonthlyEvaluations ? `<div class="pivot-m-pbar-row">
@@ -1566,6 +1570,19 @@ function renderPivotMobileCards(entries, totals) {
   }).join('');
 
   document.getElementById('pivot-m-cards').innerHTML = html;
+}
+
+// Labels switch between a single month and the "Overall" (all months) view.
+function periodLabels(overall) {
+  return overall
+    ? { total:'Overall Total', pending:'Pending', month:'Total', th1:'Total Evaluations', th2:'⏳ Pending', none:'any period' }
+    : { total:'Month Total', pending:'Open Pending', month:'Month', th1:'Monthly Evaluations', th2:'⏳ Pending + Carryover', none:'the selected month' };
+}
+function applyPeriodHeaders(prefix, overall) {
+  const L = periodLabels(overall);
+  const a = document.getElementById(prefix + '-total'), b = document.getElementById(prefix + '-pending');
+  if (a) a.textContent = L.th1;
+  if (b) b.textContent = L.th2;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1602,12 +1619,13 @@ function populateCustMonthOptions(months, selectedMonth) {
   if (!sel) return;
   const valid = v => /^\d{4}-(0[1-9]|1[0-2])$/.test(String(v || ''));
   const ordered = [...new Set([getTodayMonthISO(), ...(months || []), selectedMonth].filter(valid))].sort((a, b) => b.localeCompare(a));
-  sel.innerHTML = ordered.map(value => {
+  sel.innerHTML = '<option value="overall">Overall</option>' + ordered.map(value => {
     const [y, m] = value.split('-').map(Number);
     const label = new Date(y, m - 1, 1).toLocaleDateString(undefined, { month:'long', year:'numeric' });
     return `<option value="${value}">${label}</option>`;
   }).join('');
-  sel.value = valid(selectedMonth) && ordered.includes(selectedMonth) ? selectedMonth : getTodayMonthISO();
+  sel.value = selectedMonth === 'overall' ? 'overall'
+    : valid(selectedMonth) && ordered.includes(selectedMonth) ? selectedMonth : getTodayMonthISO();
 }
 
 function populateCustEvaluators(list, selected) {
@@ -1635,7 +1653,7 @@ function updateCustFilterBadge() {
   if (!badge || !btn) return;
   if (!month) { badge.classList.remove('visible'); btn.classList.remove('visible'); return; }
   const [y, m] = month.split('-').map(Number);
-  const display = y && m ? new Date(y, m - 1, 1).toLocaleDateString(undefined, { month:'long', year:'numeric' }) : month;
+  const display = month === 'overall' ? 'Overall' : y && m ? new Date(y, m - 1, 1).toLocaleDateString(undefined, { month:'long', year:'numeric' }) : month;
   document.getElementById('cust-filter-badge-text').textContent = 'Month · ' + display + (ev ? ' · ' + ev : '');
   badge.classList.add('visible');
   btn.classList.toggle('visible', month !== getTodayMonthISO());
@@ -1654,8 +1672,9 @@ function setCurrentCustMonth() {
 function renderCustStats() {
   const totals = custViewTotals();
   setStats(totals.total, totals.pending, totals.updated, true);
-  document.getElementById('stat-total-lbl').textContent   = 'Month Total';
-  document.getElementById('stat-pending-lbl').textContent = 'Open Pending';
+  const L = periodLabels(document.getElementById('cust-month').value === 'overall');
+  document.getElementById('stat-total-lbl').textContent   = L.total;
+  document.getElementById('stat-pending-lbl').textContent = L.pending;
   document.getElementById('stat-updated-lbl').textContent = 'Updated';
   requestAnimationFrame(recalcSticky);
 }
@@ -1792,6 +1811,9 @@ function custPagerHtml(page, pages, total, compact) {
 function pctColor(pct) { return pct === 100 ? 'var(--green)' : pct > 50 ? 'var(--orange)' : 'var(--red)'; }
 
 function renderCustomer() {
+  const custOverall = document.getElementById('cust-month').value === 'overall';
+  const CL = periodLabels(custOverall);
+  applyPeriodHeaders('ch', custOverall);
   const entries = custEntries();
   const searching = !!custQuery();
   const totals = custViewTotals();
@@ -1805,7 +1827,7 @@ function renderCustomer() {
     : '';
 
   if (!entries.length) {
-    const emptyHtml = `<div class="pivot-empty"><div class="pivot-empty-ico">📋</div><p>${searching ? 'No customers match “' + esc(document.getElementById('cust-q').value.trim()) + '”' : 'No evaluations for ' + esc(document.getElementById('cust-month').value || 'the selected month')}</p></div>`;
+    const emptyHtml = `<div class="pivot-empty"><div class="pivot-empty-ico">📋</div><p>${searching ? 'No customers match “' + esc(document.getElementById('cust-q').value.trim()) + '”' : 'No evaluations for ' + (custOverall ? CL.none : esc(document.getElementById('cust-month').value || CL.none))}</p></div>`;
     document.getElementById('cust-tbody').innerHTML = `<tr><td colspan="5">${emptyHtml}</td></tr>`;
     document.getElementById('cust-tfoot').innerHTML = '';
     document.getElementById('cust-m-cards').innerHTML = emptyHtml;
@@ -1853,8 +1875,8 @@ function renderCustomer() {
   // Mobile cards
   let html = `
   <div class="pivot-totals-card">
-    <div class="ptc-item"><div class="ptc-num">${totals.total}</div><div class="ptc-lbl">Month Total</div></div>
-    <div class="ptc-item"><div class="ptc-num">${totals.pending}</div><div class="ptc-lbl">Open Pending</div></div>
+    <div class="ptc-item"><div class="ptc-num">${totals.total}</div><div class="ptc-lbl">${CL.total}</div></div>
+    <div class="ptc-item"><div class="ptc-num">${totals.pending}</div><div class="ptc-lbl">${CL.pending}</div></div>
     <div class="ptc-item"><div class="ptc-num">${totals.updated}</div><div class="ptc-lbl">Updated</div></div>
   </div>`;
   html += pageEntries.map(([name, d]) => {
@@ -1870,9 +1892,9 @@ function renderCustomer() {
       </div>
       <div class="pivot-m-body">
         <div class="pivot-m-stats">
-          <div class="pivot-m-stat"><div class="pivot-m-stat-num blue">${d.total}</div><div class="pivot-m-stat-lbl">Month</div></div>
+          <div class="pivot-m-stat"><div class="pivot-m-stat-num blue">${d.total}</div><div class="pivot-m-stat-lbl">${CL.month}</div></div>
           <div class="pivot-m-stat"><div class="pivot-m-stat-num green">${d.updated}</div><div class="pivot-m-stat-lbl">Updated</div></div>
-          <div class="pivot-m-stat"><div class="pivot-m-stat-num orange">${d.pending}</div><div class="pivot-m-stat-lbl">Open Pending</div></div>
+          <div class="pivot-m-stat"><div class="pivot-m-stat-num orange">${d.pending}</div><div class="pivot-m-stat-lbl">${CL.pending}</div></div>
         </div>
         ${has ? `<div class="pivot-m-pbar-row">
           <div class="pivot-m-pbar"><div class="pivot-m-pbar-fill" style="width:${pct}%"></div></div>
