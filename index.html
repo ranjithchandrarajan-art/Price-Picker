@@ -461,6 +461,10 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 .ctable thead th{position:sticky;top:0;z-index:4;height:52px}      /* header stays while rows scroll */
 .ctable tfoot td{position:sticky;bottom:0;z-index:4}   /* footer stays while rows scroll */
 .ctable tfoot tr,.ctable tfoot td{height:52px}
+/* filler row: takes the space of the missing rows so the footer always sits at the bottom, against the pager */
+.ctable tbody tr.fill-row,
+.ctable tbody tr.fill-row td{height:calc(var(--fill-rows,0) * var(--pivot-row-height))}
+.ctable tbody tr.fill-row td{padding:0;border-bottom:0;background:var(--white)!important}
 .cust-pager{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 16px 8px;background:var(--navy);color:#fff;font-size:12.5px;font-weight:600}
 .pg-btns{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .pg-btn{min-width:34px;height:32px;padding:0 10px;border-radius:8px;border:1.5px solid rgba(255,255,255,.35);color:#fff;background:transparent;font-size:12.5px;font-weight:700;transition:.15s}
@@ -759,6 +763,12 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
     <!-- ══ CUSTOMER SUMMARY TAB ═════════════════════════════ -->
     <div id="tab-customer" style="display:none">
       <div class="pivot-toolbar" id="cust-toolbar">
+        <div class="search-wrap" style="min-width:180px;max-width:260px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="cust-q" placeholder="Search customer name…" autocomplete="off" oninput="onCustSearch()"/>
+        </div>
         <div class="pivot-date-group">
           <span class="pivot-date-label">Month</span>
           <select class="pivot-date-input" id="cust-month" onchange="onCustFilterChange()"></select>
@@ -1153,7 +1163,7 @@ function showLoading() {
 // ══════════════════════════════════════════════════════════════
 function renderStats() {
   if (_activeTab === 'customer') {
-    renderCustStats(custTotals);
+    renderCustStats();
     return;
   }
   if (_activeTab === 'pivot') {
@@ -1340,7 +1350,7 @@ function switchTab(el) {
       loadCustomerSummary(true);
     } else {
       renderCustomer();
-      renderCustStats(custTotals);
+      renderCustStats();
     }
   } else {
     // Restore vehicle stats
@@ -1578,6 +1588,7 @@ function resetCustomerState() {
     const el = document.getElementById(id); if (el) el.innerHTML = '';
   });
   const m = document.getElementById('cust-month'); if (m) { m.innerHTML = ''; m.value = ''; }
+  const q = document.getElementById('cust-q'); if (q) q.value = '';
   const e = document.getElementById('cust-eval');  if (e) { e.innerHTML = '<option value="">All Evaluators</option>'; e.value = ''; }
   const t = document.getElementById('tab-customer'); if (t) t.style.display = 'none';
 }
@@ -1640,7 +1651,8 @@ function setCurrentCustMonth() {
   onCustFilterChange();
 }
 
-function renderCustStats(totals) {
+function renderCustStats() {
+  const totals = custViewTotals();
   setStats(totals.total, totals.pending, totals.updated, true);
   document.getElementById('stat-total-lbl').textContent   = 'Month Total';
   document.getElementById('stat-pending-lbl').textContent = 'Open Pending';
@@ -1673,7 +1685,7 @@ async function loadCustomerSummary(resetPage = true) {
     custLoadedKey = custKey();
     updateCustFilterBadge();
     renderCustomer();
-    if (_activeTab === 'customer') renderCustStats(custTotals);
+    if (_activeTab === 'customer') renderCustStats();
   } catch (e) {
     toast('Network error loading customer summary', 'err');
     showCustError();
@@ -1686,8 +1698,27 @@ function showCustError() {
   document.getElementById('cust-m-cards').innerHTML = '<div class="empty"><div class="empty-ico">⚠️</div><p>Failed to load data</p></div>';
 }
 
+function custQuery() {
+  return (document.getElementById('cust-q')?.value || '').trim().toLowerCase();
+}
+
+// Totals follow the search: all customers when no search, matching customers otherwise.
+function custViewTotals() {
+  if (!custQuery()) return custTotals;
+  return computeTotalsFromPivot(Object.fromEntries(custEntries()));
+}
+
+function onCustSearch() {
+  custPage = 1;
+  renderCustomer();
+  const sc = document.getElementById('cust-scroll');
+  if (sc) sc.scrollTop = 0;
+  if (_activeTab === 'customer') renderCustStats();
+}
+
 function custEntries() {
-  return Object.entries(custData).sort(([an, a], [bn, b]) =>
+  const q = custQuery();
+  return Object.entries(custData).filter(([name]) => !q || name.toLowerCase().includes(q)).sort(([an, a], [bn, b]) =>
     (Number(b.total) || 0) - (Number(a.total) || 0) ||
     (Number(b.pending) || 0) - (Number(a.pending) || 0) ||
     an.localeCompare(bn));
@@ -1762,16 +1793,19 @@ function pctColor(pct) { return pct === 100 ? 'var(--green)' : pct > 50 ? 'var(-
 
 function renderCustomer() {
   const entries = custEntries();
-  const totals = custTotals;
+  const searching = !!custQuery();
+  const totals = custViewTotals();
   const pages = Math.max(1, Math.ceil(entries.length / CUST_PAGE_SIZE));
   custPage = Math.min(Math.max(1, custPage), pages);
   const pageEntries = entries.slice((custPage - 1) * CUST_PAGE_SIZE, custPage * CUST_PAGE_SIZE);
 
   const countEl = document.getElementById('cust-row-count');
-  if (countEl) countEl.textContent = entries.length ? entries.length + ' customer' + (entries.length !== 1 ? 's' : '') : '';
+  if (countEl) countEl.textContent = entries.length
+    ? (searching ? entries.length + ' of ' + Object.keys(custData).length : entries.length) + ' customer' + (entries.length !== 1 ? 's' : '')
+    : '';
 
   if (!entries.length) {
-    const emptyHtml = `<div class="pivot-empty"><div class="pivot-empty-ico">📋</div><p>No evaluations for ${esc(document.getElementById('cust-month').value || 'the selected month')}</p></div>`;
+    const emptyHtml = `<div class="pivot-empty"><div class="pivot-empty-ico">📋</div><p>${searching ? 'No customers match “' + esc(document.getElementById('cust-q').value.trim()) + '”' : 'No evaluations for ' + esc(document.getElementById('cust-month').value || 'the selected month')}</p></div>`;
     document.getElementById('cust-tbody').innerHTML = `<tr><td colspan="5">${emptyHtml}</td></tr>`;
     document.getElementById('cust-tfoot').innerHTML = '';
     document.getElementById('cust-m-cards').innerHTML = emptyHtml;
@@ -1796,12 +1830,14 @@ function renderCustomer() {
         </div>` : '<span class="p-progress-count">—</span>'}
       </td>
     </tr>`;
-  }).join('');
+  }).join('') + (pageEntries.length < CUST_PAGE_SIZE
+    ? `<tr class="fill-row" style="--fill-rows:${CUST_PAGE_SIZE - pageEntries.length}"><td></td><td></td><td></td><td></td><td></td></tr>`
+    : '');
 
   // Footer = totals for ALL customers under the current filters (not just this page)
   const tp = totals.total ? Math.round(totals.updated / totals.total * 100) : 0;
   document.getElementById('cust-tfoot').innerHTML = `<tr>
-    <td class="p-name">📊 All Customers</td>
+    <td class="p-name">📊 ${searching ? 'Matching Customers' : 'All Customers'}</td>
     <td><strong class="p-count total">${totals.total}</strong></td>
     <td><strong class="p-count updated">${totals.updated}</strong></td>
     <td><strong class="p-count pending">${totals.pending}</strong></td>
@@ -2303,7 +2339,7 @@ async function silentRefresh() {
       renderPivotStats(pivotTotals);
     } else if (_activeTab === 'customer') {
       renderCustomer();
-      renderCustStats(custTotals);
+      renderCustStats();
     } else {
       renderStats();
     }
