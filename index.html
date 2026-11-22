@@ -325,7 +325,7 @@ td.td-num{white-space:nowrap;word-break:normal;text-align:center;color:var(--mut
 /* ════════════════════════════════════════════════════════════
    PIVOT TABLE (desktop)
 ════════════════════════════════════════════════════════════ */
-.pivot-wrap{background:var(--white);border-radius:var(--radius-lg);border:3px solid var(--navy);box-shadow:var(--shadow-sm);flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.pivot-wrap{background:var(--navy);border-radius:var(--radius-lg);border:3px solid var(--navy);padding-bottom:3px;box-shadow:var(--shadow-sm);flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .pivot-scroll{flex:1;min-height:0;overflow:auto}
 #tab-pivot{display:flex;flex:1;flex-direction:column;height:100%;min-height:0}
 #main-page.pivot-view #tab-pivot{height:auto;min-height:0;overflow:hidden}
@@ -1257,7 +1257,7 @@ function fitPivotTable() {
     const headerHeight = table.tHead?.getBoundingClientRect().height || 0;
     const footerHeight = table.tFoot?.getBoundingClientRect().height || 0;
     const rowCount = Math.max(1, body.rows.length);
-    const available = Math.max(0, scroll.clientHeight - headerHeight - footerHeight - 2);
+    const available = Math.max(0, scroll.clientHeight - headerHeight - footerHeight);
     const rowHeight = Math.max(44, available / rowCount);
     table.style.setProperty('--pivot-row-height', rowHeight.toFixed(2) + 'px');
   });
